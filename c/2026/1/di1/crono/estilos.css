@@ -111,7 +111,7 @@ body{
   color:#000;
   font-weight:700;
   position:sticky;
-  top:52px;
+  top:0;
   z-index:80;
   box-shadow:0 3px 6px rgba(0,0,0,.12);
 }
@@ -125,7 +125,10 @@ body{
 }
 .hand-gutter{
   background:#fff!important;
+  border-top:0!important;
+  border-bottom:0!important;
   border-right:0!important;
+  box-shadow:none!important;
   justify-content:center!important;
   text-align:center!important;
   color:#000;
@@ -250,7 +253,7 @@ a.activity-cell:hover{filter:brightness(.94)}
 .schedule-row.is-next .block-cell,.schedule-row.is-next .comment-cell{background:var(--current-bg)}
 .schedule-row.is-next .activity-cell:not(.is-devolucion){background:#000!important; color:#fff!important}
 .schedule-row.is-next .activity-cell.is-devolucion{background:transparent!important; color:#000!important}
-.schedule-row.is-next .hand-gutter{background:#fff!important; color:#000!important}
+.schedule-row.is-next .hand-gutter{background:var(--current-bg)!important; color:#000!important}
 .schedule-row.is-next::after{content:none!important; display:none!important; animation:none!important}
 
 /* FERIADO / SUSPENDIDA */
@@ -309,7 +312,6 @@ a.activity-cell:hover{filter:brightness(.94)}
 @media (max-width:767px){
   .wrap{padding:0 10px}
   .schedule{margin-left:0}
-  .schedule-head{top:64px}
   .site-footer .footer-inner{grid-template-columns:1fr 3fr}
   .footer-name{display:none!important}
   .site-footer .footer-left{justify-content:flex-start; gap:8px; padding:4px 8px; min-height:var(--footer-h)}
