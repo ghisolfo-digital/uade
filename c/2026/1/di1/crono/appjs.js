@@ -187,7 +187,7 @@ function readData(rows) {
 
   const blockDefs = new Map();
   rows.slice(1).forEach(r => {
-    if (clean(r[0]).toLowerCase() !== "bloques") return;
+    if (clean(r[0]).toLowerCase() !== "bloque") return;
     const label = clean(r[1]);
     if (!label) return;
     const slug = slugify(label);
