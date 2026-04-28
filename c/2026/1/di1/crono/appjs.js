@@ -172,6 +172,10 @@ function blockStyle(block) {
   return styles.length ? styles.join(";") : "";
 }
 
+function isDevolucion(value) {
+  return /devoluc|devolución/i.test(clean(value));
+}
+
 /* =========================
    DATA
    ========================= */
@@ -187,7 +191,8 @@ function readData(rows) {
 
   const blockDefs = new Map();
   rows.slice(1).forEach(r => {
-    if (clean(r[0]).toLowerCase() !== "bloque") return;
+    const kind = clean(r[0]).toLowerCase();
+    if (kind !== "bloque" && kind !== "bloques") return;
     const label = clean(r[1]);
     if (!label) return;
     const slug = slugify(label);
@@ -239,21 +244,29 @@ function readData(rows) {
     group.rows.push(item);
   });
 
+  const usedBlocks = new Set();
+  classRows.forEach(item => {
+    if (!item.bloque) return;
+    if (!item.actividad && !item.comentario && !item.link) return;
+    usedBlocks.add(slugify(item.bloque));
+  });
+
   const blocks = [];
   const seen = new Set();
 
   blockDefs.forEach(def => {
+    if (!usedBlocks.has(def.slug)) return;
     seen.add(def.slug);
     blocks.push(def);
   });
 
   classRows.forEach(item => {
-    const block = item.bloque || (item.asistenciaObligatoria ? "Asistencia" : "");
-    if (!block) return;
-    const slug = slugify(block);
+    if (!item.bloque) return;
+    if (!item.actividad && !item.comentario && !item.link) return;
+    const slug = slugify(item.bloque);
     if (!seen.has(slug)) {
       seen.add(slug);
-      blocks.push({ label: block, slug, strong: "", soft: "" });
+      blocks.push({ label: item.bloque, slug, strong: "", soft: "" });
     }
   });
 
@@ -277,8 +290,8 @@ function render(data) {
   document.getElementById("header-meta").textContent = data.headerMeta;
   document.getElementById("header-brand").textContent = data.headerBrand;
 
-  const timeText = data.timeStart && data.timeEnd ? ` · ${data.timeStart} a ${data.timeEnd} hs` : "";
-  document.getElementById("header-subline").textContent = "";
+  const subline = document.getElementById("header-subline");
+  if (subline) subline.textContent = "";
   document.title = `Cronograma - ${data.firstField || data.headerTitle} - @ghisolfo.digital`;
 
   if (data.groups.length === 0) {
@@ -308,12 +321,22 @@ function render(data) {
   `;
 }
 
+function renderBaseCells(group, isNext) {
+  const day = group.date ? getDayName(group.date) : "";
+  const classNo = formatClassNumber(group.clase);
+
+  return `
+    <div class="class-no cell-sticky cell-sticky-1">${isNext ? `<span class="next-hand">👉</span>` : ""}${escapeHTML(classNo)}</div>
+    <div class="class-day cell-sticky cell-sticky-2">${escapeHTML(day)}</div>
+    <div class="class-date cell-sticky cell-sticky-3">${escapeHTML(formatDateShort(group.fecha))}</div>
+    <div class="class-room cell-sticky cell-sticky-4">${escapeHTML(group.aula || "")}</div>
+  `;
+}
+
 function renderGroup(group, index, nextIdx, blocks) {
   const isPast = group.date && group.date < todayLocal();
   const isNext = index === nextIdx;
   const isSpecial = ["feriado", "suspendida"].includes(group.tipoClase);
-  const day = group.date ? getDayName(group.date) : "";
-  const classNo = formatClassNumber(group.clase);
   const typeLabel = group.tipoClase ? group.tipoClase.charAt(0).toUpperCase() + group.tipoClase.slice(1) : "Clase";
 
   const rowClasses = [
@@ -326,11 +349,8 @@ function renderGroup(group, index, nextIdx, blocks) {
   if (isSpecial) {
     return `
       <div class="${rowClasses}">
-        <div class="class-no cell-sticky cell-sticky-1">${isNext ? `<span class="next-hand">👉</span>` : ""}${escapeHTML(classNo)}</div>
-        <div class="class-day cell-sticky cell-sticky-2">${escapeHTML(day)}</div>
-        <div class="class-date cell-sticky cell-sticky-3">${escapeHTML(formatDateShort(group.fecha))}</div>
-        <div class="class-room cell-sticky cell-sticky-4">${escapeHTML(group.aula || "")}</div>
-        <div class="special-cell" style="grid-column: span ${Math.max(blocks.length + 1, 1)};">
+        ${renderBaseCells(group, isNext)}
+        <div class="special-cell special-sticky" style="grid-column: span ${Math.max(blocks.length + 1, 1)};">
           ${escapeHTML(group.comentario || typeLabel)}
         </div>
       </div>
@@ -339,10 +359,7 @@ function renderGroup(group, index, nextIdx, blocks) {
 
   return `
     <div class="${rowClasses}">
-      <div class="class-no cell-sticky cell-sticky-1">${isNext ? `<span class="next-hand">👉</span>` : ""}${escapeHTML(classNo)}</div>
-      <div class="class-day cell-sticky cell-sticky-2">${escapeHTML(day)}</div>
-      <div class="class-date cell-sticky cell-sticky-3">${escapeHTML(formatDateShort(group.fecha))}</div>
-      <div class="class-room cell-sticky cell-sticky-4">${escapeHTML(group.aula || "-")}</div>
+      ${renderBaseCells(group, isNext)}
       ${blocks.map((block, i) => renderBlockCell(group, block, i)).join("")}
       <div class="comment-cell">${escapeHTML(group.comentario || "")}</div>
     </div>
@@ -364,11 +381,11 @@ function renderBlockCell(group, block, blockIndex) {
 }
 
 function renderActivity(item) {
-  const isDevolucion = /devoluc|devolución/i.test(item.actividad || "");
+  const devolucion = isDevolucion(item.actividad || item.comentario);
   const classes = [
     "activity-cell",
     item.destacado ? "is-strong" : "is-soft",
-    isDevolucion ? "is-devolucion" : ""
+    devolucion ? "is-devolucion" : ""
   ].filter(Boolean).join(" ");
 
   const label = escapeHTML(item.actividad || item.comentario || "-");
