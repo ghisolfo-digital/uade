@@ -92,10 +92,20 @@ function tipoToClass(tipo) {
 function parseDateRelaxed(str) {
   if (!str) return null;
 
+  str = String(str).trim();
+
   const parts = str.split(/[\/\-]/);
+
   if (parts.length === 3) {
-    const [d, m, y] = parts;
-    return new Date(`${y}-${m}-${d}`);
+    let [d, m, y] = parts.map(p => p.trim());
+
+    d = Number(d);
+    m = Number(m);
+    y = Number(y);
+
+    if (y < 100) y += 2000;
+
+    return new Date(y, m - 1, d);
   }
 
   const d = new Date(str);
@@ -191,7 +201,10 @@ tipos = orderedTipos;
 
   renderFilters(tipos);
   renderGroups(groups);
+  initFiltersPanelToggle();
   initInteractions();
+  initFabDown();
+  
 
   const status = document.querySelector("#status-message");
   if (status) status.remove();
@@ -415,7 +428,39 @@ function initInteractions() {
   const startFlat = body.classList.contains("flat-mode") || (grid && grid.classList.contains("GridFlat"));
   setFlatMode(startFlat);
 }
+function initFiltersPanelToggle() {
+  const details = document.querySelector("details.filters-panel");
+  const panel = document.querySelector(".filters--in-header");
 
+  if (!details || !panel) return;
+
+  function sync() {
+    panel.classList.toggle("is-collapsed", !details.open);
+  }
+
+  details.addEventListener("toggle", sync);
+  sync();
+}
+function initFabDown() {
+  const fab = document.getElementById("fab-down");
+  if (!fab) return;
+
+  fab.addEventListener("click", () => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: "smooth"
+    });
+  });
+
+  function onScroll() {
+    const doc = document.documentElement;
+    const dist = doc.scrollHeight - window.innerHeight - window.scrollY;
+    fab.classList.toggle("fab-hidden", dist < 24);
+  }
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+}
 
 /* =========================
    INIT
