@@ -31,40 +31,46 @@ async function fetchCSV() {
   return parseCSV(text);
 }
 
-function parseCSV(csv) {
-  const rows = csv
-    .replace(/^\uFEFF/, "")
-    .trim()
-    .split(/\r?\n/)
-    .map(line => {
-      const result = [];
-      let current = "";
-      let insideQuotes = false;
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
 
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
+  text = text.replace(/^\uFEFF/, "");
 
-        if (char === '"') {
-          if (insideQuotes && line[i + 1] === '"') {
-            current += '"';
-            i++;
-          } else {
-            insideQuotes = !insideQuotes;
-          }
-        } else if (char === ',' && !insideQuotes) {
-          result.push(current);
-          current = "";
-        } else {
-          current += char;
-        }
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        cell += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
       }
-      result.push(current);
-      return result;
-    });
+    } else if (char === "," && !inQuotes) {
+      row.push(cell);
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") i++;
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+
+  if (cell !== "" || row.length > 0) {
+    row.push(cell);
+    rows.push(row);
+  }
 
   return rows;
 }
-
 
 /* =========================
    UTILIDADES
@@ -107,13 +113,32 @@ function getDayName(date) {
    ========================= */
 
 function buildApp(rows) {
-  const header = rows.shift();
+  const header = rows.shift() || [];
 
-  const clean = rows.filter(r =>
-    r.slice(0, 5).some(c => (c || "").trim() !== "")
-  );
+  let headerTitle, headerMeta, headerBrand, firstField;
 
-  // tipos únicos
+  if (header.length >= 4) {
+    firstField = header[0] || "";
+    headerTitle = header[1] || "";
+    headerMeta = header[2] || "";
+    headerBrand = header[3] || "";
+  } else {
+    firstField = header[0] || "";
+    headerTitle = header[0] || "";
+    headerMeta = header[1] || "";
+    headerBrand = header[2] || "";
+  }
+
+  document.querySelector("#header-title").textContent = headerTitle || "Experiencia de Usuario";
+  document.querySelector("#header-meta").textContent = headerMeta || "";
+  document.querySelector("#header-brand").textContent = headerBrand || "";
+
+  document.title = `Teóricas, links y materiales - ${firstField || "Listado"} - @ghisolfo.digital`;
+
+  const clean = rows
+    .map(r => Array.from({ length: 5 }, (_, i) => r[i] || ""))
+    .filter(r => r.slice(0, 5).some(c => String(c).trim() !== ""));
+
   const tipos = {};
   clean.forEach(r => {
     const label = (r[2] || "").trim();
@@ -121,12 +146,11 @@ function buildApp(rows) {
     tipos[tipoToSlug(label)] = label;
   });
 
-  // agrupar por clase
   const groups = [];
   let current = null;
 
   clean.forEach(r => {
-    const key = r[0] || "-";
+    const key = (r[0] || "").trim() || "-";
 
     if (!current || current.key !== key) {
       current = { key, rows: [] };
@@ -138,8 +162,10 @@ function buildApp(rows) {
 
   renderFilters(tipos);
   renderGroups(groups);
-}
 
+  const status = document.querySelector("#status-message");
+  if (status) status.remove();
+}
 
 /* =========================
    RENDER FILTROS
