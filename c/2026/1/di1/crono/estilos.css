@@ -42,9 +42,9 @@ body{margin:0; color:#111; background:#fff; font-family:var(--ff-sans); font-siz
 .schedule-card{min-width:920px; background:#fff; position:relative}
 .schedule-row{display:grid; grid-template-columns:var(--sticky-1) var(--sticky-2) var(--sticky-3) var(--sticky-4) repeat(var(--block-count), minmax(72px, 1fr)) minmax(190px, 1.55fr); align-items:stretch; position:relative}
 .schedule-row>div{min-width:0}
-.schedule-head{font-size:13px; line-height:1; font-weight:700; color:#000; background:#93c47d; position:sticky; top:0; z-index:20}
+.schedule-head{font-size:13px; line-height:1; font-weight:700; color:#000; background:#93c47d; position:sticky; top:0; z-index:30; box-shadow:0 2px 6px rgba(0,0,0,.08);; backdrop-filter:blur(2px);}
 .schedule-head>div{min-height:23px; padding:4px 6px; border-right:1px dotted rgba(0,0,0,.25); display:flex; align-items:center; justify-content:center; white-space:nowrap}
-.head-block{background:var(--strong,#666); color:#fff; border-right:1px dotted rgba(255,255,255,.5)!important}
+.head-block{background:var(--strong,#666); color:#000; border-right:1px dotted rgba(255,255,255,.5)!important}
 .head-class,.head-day,.head-date,.head-room,.head-comment{background:#93c47d; color:#000}
 
 .schedule-body .schedule-row{border-bottom:1px solid var(--grid-border); min-height:25px; transition:background-color .12s ease, box-shadow .12s ease}
@@ -74,7 +74,7 @@ a.activity-cell:hover{filter:brightness(.94)}
 .schedule-row.is-past .activity-cell.is-strong{background:var(--strong); color:#000}
 .schedule-row.is-past .activity-cell.is-devolucion{background:transparent!important; color:var(--strong,#666)!important}
 
-.schedule-row.is-next{background:#d9d9d9!important; position:relative; z-index:5; overflow:hidden}
+.schedule-row.is-next{background:#d9d9d9!important; position:relative; z-index:1; overflow:hidden}
 .schedule-row.is-next .class-no,.schedule-row.is-next .class-day,.schedule-row.is-next .class-date,.schedule-row.is-next .class-room,.schedule-row.is-next .comment-cell,.schedule-row.is-next .empty-cell{background:#d9d9d9!important}
 .schedule-row.is-next::after{content:""; position:absolute; inset:0; z-index:8; pointer-events:none; background:linear-gradient(110deg, transparent 0%, transparent 35%, rgba(255,255,255,.35) 50%, transparent 65%, transparent 100%); transform:translateX(-100%); animation:shine 2.8s ease-in-out infinite}
 @keyframes shine{0%{transform:translateX(-100%)}55%{transform:translateX(100%)}100%{transform:translateX(100%)}}
@@ -88,12 +88,23 @@ a.activity-cell:hover{filter:brightness(.94)}
 .schedule-row.is-feriado .class-no,.schedule-row.is-feriado .class-day,.schedule-row.is-feriado .class-date,.schedule-row.is-feriado .class-room{color:var(--feriado-text)}
 .schedule-row.is-suspendida .class-no,.schedule-row.is-suspendida .class-day,.schedule-row.is-suspendida .class-date,.schedule-row.is-suspendida .class-room{color:var(--suspendida-text)}
 
-.cell-sticky{position:sticky; z-index:10}
+.special-cell{
+  position:sticky;
+  left:calc(
+    var(--sticky-1) +
+    var(--sticky-2) +
+    var(--sticky-3) +
+    var(--sticky-4)
+  );
+  z-index:14;
+}
+
+.cell-sticky{position:sticky; z-index:20;box-shadow:2px 0 4px rgba(0,0,0,.06);}
 .cell-sticky-1{left:0}
 .cell-sticky-2{left:var(--sticky-1)}
 .cell-sticky-3{left:calc(var(--sticky-1) + var(--sticky-2))}
 .cell-sticky-4{left:calc(var(--sticky-1) + var(--sticky-2) + var(--sticky-3))}
-.schedule-head .cell-sticky{z-index:25}
+.schedule-head .cell-sticky{z-index:35; box-shadow:2px 0 4px rgba(0,0,0,.08);}
 
 .site-footer{position:fixed; left:0; right:0; bottom:0; z-index:1200}
 .site-footer .footer-inner{display:grid; grid-template-columns:3fr 1fr; align-items:stretch; width:100%; border-top:1px solid rgba(255,255,255,.35); overflow:hidden}
