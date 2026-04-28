@@ -787,3 +787,81 @@ a.activity-cell:hover{
 .block-cell{
   justify-content:center!important;
 }
+
+/* =========================
+   FIX DEFINITIVO: columna manito
+   ========================= */
+
+.schedule{
+  position:relative;
+  padding-left:30px!important;
+  background:#fff;
+}
+
+/* franja blanca fija por encima de la tabla */
+.schedule::after{
+  content:"";
+  position:sticky;
+  left:0;
+  top:0;
+  display:block;
+  width:30px;
+  height:100%;
+  min-height:100vh;
+  background:#fff;
+  z-index:200;
+  pointer-events:none;
+}
+
+/* La manito queda arriba de esa franja blanca */
+.next-hand{
+  left:-25px!important;
+  background:transparent!important;
+  padding:0!important;
+  z-index:250!important;
+}
+
+/* Evita que la primera columna transparente deje ver cosas atrás */
+.cell-sticky-1{
+  background-clip:padding-box;
+}
+
+.class-no.cell-sticky-1{
+  background:#f4f4f4!important;
+}
+
+.schedule-row.is-past .class-no.cell-sticky-1{
+  background:#eeeeee!important;
+}
+
+.schedule-row.is-next .class-no.cell-sticky-1{
+  background:#d9d9d9!important;
+}
+
+.schedule-row.is-feriado .class-no.cell-sticky-1,
+.schedule-row.is-suspendida .class-no.cell-sticky-1{
+  background:var(--special-bg)!important;
+}
+
+/* =========================
+   Devoluc. transparente siempre
+   ========================= */
+
+.activity-cell.is-devolucion,
+.activity-cell.is-devolucion.is-soft,
+.activity-cell.is-devolucion.is-strong,
+.schedule-row.is-past .activity-cell.is-devolucion,
+.schedule-row.is-next .activity-cell.is-devolucion{
+  background:transparent!important;
+  font-weight:400!important;
+}
+
+/* Devoluc. normal: color del bloque, pero más oscuro */
+.activity-cell.is-devolucion{
+  color:color-mix(in srgb, var(--strong) 70%, #000 30%)!important;
+}
+
+/* Devoluc. en clase actual: texto negro */
+.schedule-row.is-next .activity-cell.is-devolucion{
+  color:#000!important;
+}
