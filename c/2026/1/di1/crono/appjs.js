@@ -305,6 +305,7 @@ function render(data) {
   schedule.innerHTML = `
     <div class="schedule-card">
       <div class="schedule-row schedule-head">
+        <div class="hand-gutter cell-sticky cell-sticky-hand"></div>
         <div class="head-class cell-sticky cell-sticky-1">Clase</div>
         <div class="head-day cell-sticky cell-sticky-2">Día</div>
         <div class="head-date cell-sticky cell-sticky-3">Fecha</div>
@@ -326,7 +327,8 @@ function renderBaseCells(group, isNext) {
   const classNo = formatClassNumber(group.clase);
 
   return `
-    <div class="class-no cell-sticky cell-sticky-1">${isNext ? `<span class="next-hand">👉</span>` : ""}${escapeHTML(classNo)}</div>
+    <div class="hand-gutter cell-sticky cell-sticky-hand">${isNext ? "👉" : ""}</div>
+    <div class="class-no cell-sticky cell-sticky-1">${escapeHTML(classNo)}</div>
     <div class="class-day cell-sticky cell-sticky-2">${escapeHTML(day)}</div>
     <div class="class-date cell-sticky cell-sticky-3">${escapeHTML(formatDateShort(group.fecha))}</div>
     <div class="class-room cell-sticky cell-sticky-4">${escapeHTML(group.aula || "")}</div>
