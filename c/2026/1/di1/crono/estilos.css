@@ -709,6 +709,81 @@ a.activity-cell:hover{
 }
 
 .next-hand{
+  background:transparent;
+  padding-right:0;
+}
+
+/* Columna blanca fija para la manito */
+.schedule{
+  position:relative;
   background:#fff;
-  padding-right:3px;
+  padding-left:28px;
+}
+
+.schedule::before{
+  content:"";
+  position:sticky;
+  left:0;
+  display:block;
+  width:28px;
+  height:100%;
+  background:#fff;
+  z-index:110;
+}
+
+/* La tabla se corre sobre ese fondo blanco */
+.schedule-card{
+  margin-left:0;
+}
+
+/* Manito por encima de esa franja blanca */
+.next-hand{
+  left:-24px;
+  background:transparent;
+  z-index:140;
+}
+
+/* Alineación vertical consistente en TODAS las celdas */
+.schedule-row > div,
+.cell,
+.class-no,
+.class-day,
+.class-date,
+.class-room,
+.comment-cell,
+.block-cell,
+.activity-cell{
+  display:flex;
+  align-items:center!important;
+}
+
+/* Primeras 4 columnas bien centradas */
+.class-no,
+.class-day,
+.class-date,
+.class-room{
+  justify-content:center!important;
+  text-align:center;
+  padding-top:4px;
+  padding-bottom:4px;
+}
+
+/* Comentarios alineados verticalmente pero a la izquierda */
+.comment-cell{
+  justify-content:flex-start!important;
+  align-items:center!important;
+  padding-top:4px;
+  padding-bottom:4px;
+}
+
+/* Actividades igual altura visual que el resto */
+.activity-cell{
+  min-height:25px;
+  padding-top:4px;
+  padding-bottom:4px;
+}
+
+/* Celdas de bloques centradas verticalmente */
+.block-cell{
+  justify-content:center!important;
 }
