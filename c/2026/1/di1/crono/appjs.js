@@ -143,7 +143,7 @@ function todayLocal() {
   return d;
 }
 
-function mixWithWhite(hex, amount = 0.62) {
+function mixWithWhite(hex, amount = 0.48) {
   const c = clean(hex).replace("#", "");
   if (!/^[0-9a-fA-F]{6}$/.test(c)) return "";
   const n = parseInt(c, 16);
@@ -192,7 +192,7 @@ function readData(rows) {
   const blockDefs = new Map();
   rows.slice(1).forEach(r => {
     const kind = clean(r[0]).toLowerCase();
-    if (kind !== "bloque" && kind !== "bloques") return;
+    if (kind !== "bloque") return;
     const label = clean(r[1]);
     if (!label) return;
     const slug = slugify(label);
