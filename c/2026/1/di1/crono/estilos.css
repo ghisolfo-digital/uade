@@ -22,13 +22,16 @@
 
   --past-bg:#eeeeee;
   --past-text:#c3c3c3;
-  --current-bg:#d9d9d9;
+  --current-bg:#b6d7a8;
   --empty-bg:#eeeeee;
 
   --special-bg-base:#f7eeee;
   --special-bg-soft:#fbf7f7;
   --feriado-text:#a84f4f;
-  --suspendida-text:#555;
+  
+  --current-special-bg:#ea9999;
+  --current-special-text:#990000;
+  --suspendida-text:var(--feriado-text);
 
   --b1-soft:#d9ead3; --b1-strong:#2e7d32;
   --b2-soft:#fce5cd; --b2-strong:#d97904;
@@ -264,6 +267,25 @@ a.activity-cell:hover{filter:brightness(.94)}
 .schedule-row.is-next .activity-cell.is-devolucion{background:transparent!important; color:#000!important}
 .schedule-row.is-next .hand-gutter{background:var(--current-bg)!important; color:#000!important}
 .schedule-row.is-next::after{content:none!important; display:none!important; animation:none!important}
+.schedule-row.is-next.is-feriado,
+.schedule-row.is-next.is-suspendida,
+.schedule-row.is-next.is-feriado > div,
+.schedule-row.is-next.is-suspendida > div,
+.schedule-row.is-next.is-feriado .special-cell,
+.schedule-row.is-next.is-suspendida .special-cell,
+.schedule-row.is-next.is-feriado .class-no,
+.schedule-row.is-next.is-feriado .class-day,
+.schedule-row.is-next.is-feriado .class-date,
+.schedule-row.is-next.is-feriado .class-room,
+.schedule-row.is-next.is-suspendida .class-no,
+.schedule-row.is-next.is-suspendida .class-day,
+.schedule-row.is-next.is-suspendida .class-date,
+.schedule-row.is-next.is-suspendida .class-room,
+.schedule-row.is-next.is-feriado .hand-gutter,
+.schedule-row.is-next.is-suspendida .hand-gutter{
+  background:var(--current-special-bg)!important;
+  color:var(--current-special-text)!important;
+}
 
 /* FERIADO / SUSPENDIDA */
 .schedule-row.is-feriado,
@@ -280,7 +302,7 @@ a.activity-cell:hover{filter:brightness(.94)}
 .schedule-row.is-suspendida .class-date,
 .schedule-row.is-suspendida .class-room{
   background:var(--special-bg-base);
-  color:#777;
+  color:var(--feriado-text);
   text-decoration:line-through;
 }
 .schedule-row.is-feriado .hand-gutter,
