@@ -103,6 +103,8 @@ function parseDateRelaxed(str) {
     m = Number(m);
     y = Number(y);
 
+    if (isNaN(d) || isNaN(m) || isNaN(y)) return null;
+
     if (y < 100) y += 2000;
 
     return new Date(y, m - 1, d);
@@ -199,8 +201,11 @@ tipos = orderedTipos;
     current.rows.push(r);
   });
 
+  const lastClassIdx = findLastClassIndex(groups);
+  const shouldHighlightMostRecent = shouldHighlightLastClass(groups, lastClassIdx);
+
   renderFilters(tipos);
-  renderGroups(groups);
+  renderGroups(groups, lastClassIdx, shouldHighlightMostRecent);
   initFiltersPanelToggle();
   initInteractions();
   initFabDown();
@@ -218,6 +223,8 @@ function renderFilters(tipos) {
   const container = document.querySelector(".filters-body");
   if (!container) return;
 
+  container.innerHTML = "";
+
   Object.entries(tipos).forEach(([slug, label]) => {
     const el = document.createElement("label");
     el.className = "filter-chip";
@@ -232,33 +239,75 @@ function renderFilters(tipos) {
 }
 
 
+function findLastClassIndex(groups) {
+  for (let i = groups.length - 1; i >= 0; i--) {
+    const first = groups[i].rows[0];
+    const clase = (first[0] || "").trim();
+
+    if (clase !== "" && clase !== "-") {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+function shouldHighlightLastClass(groups, lastClassIdx) {
+  if (lastClassIdx < 0) return false;
+
+  const first = groups[lastClassIdx].rows[0];
+  const fecha = (first[1] || "").trim();
+  const date = parseDateRelaxed(fecha);
+
+  if (!date) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const oneMonthAgo = new Date(today);
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+  return date >= oneMonthAgo;
+}
 /* =========================
    RENDER GRUPOS
    ========================= */
 
-function renderGroups(groups) {
+
+function renderGroups(groups, lastClassIdx, shouldHighlightMostRecent) {
   const grid = document.querySelector(".grid");
   if (!grid) return;
 
-  groups.forEach(g => {
+  grid.innerHTML = "";
+
+  groups.forEach((g, index) => {
     const first = g.rows[0];
     const clase = first[0] || "-";
     const fecha = first[1] || "";
+
+    const isMostRecent =
+      index === lastClassIdx &&
+      clase !== "-" &&
+      shouldHighlightMostRecent;
 
     let title = "Links generales";
 
     if (clase !== "-") {
       const d = parseDateRelaxed(fecha);
       const dow = d ? getDayName(d) : "";
-      title = `Clase ${clase} - ${dow} ${fecha}`;
+      const sep = dow && fecha ? " " : "";
+      title = `Clase ${clase} - ${dow}${sep}${fecha}`;
     }
 
     const details = document.createElement("details");
-    details.className = "group";
+    details.className = isMostRecent ? "group ultima-clase" : "group";
     details.open = true;
 
     details.innerHTML = `
-      <summary class="group-label">${title}</summary>
+      <summary class="group-label${isMostRecent ? " ultima-clase" : ""}">
+        ${title}
+        ${isMostRecent ? `<span class="ultima-tag" aria-label="clase más reciente">más reciente</span>` : ""}
+      </summary>
       <ul class="group-list"></ul>
     `;
 
@@ -281,6 +330,7 @@ function renderGroups(groups) {
       if (link) {
         row.href = link;
         row.target = "_blank";
+        row.rel = "noopener noreferrer";
       }
 
       row.innerHTML = `
@@ -295,7 +345,6 @@ function renderGroups(groups) {
     grid.appendChild(details);
   });
 }
-
 
 function initInteractions() {
   const grid = document.querySelector(".grid");
@@ -351,7 +400,7 @@ function initInteractions() {
 
     items.forEach(li => {
       const tipo = li.dataset.tipo || "";
-      const visible = !noneSelected && active.includes(tipo);
+      const visible = noneSelected ? true : active.includes(tipo);
       li.classList.toggle("is-hidden", !visible);
     });
 
