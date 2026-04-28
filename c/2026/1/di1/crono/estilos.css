@@ -643,3 +643,72 @@ a.activity-cell:hover{
     transition:none!important;
   }
 }
+
+/* Ajustes finos */
+
+/* Pasadas: fondo gris de fila, pero actividades mantienen color */
+.schedule-row.is-past{
+  background:#eeeeee!important;
+}
+
+.schedule-row.is-past > div{
+  background:#eeeeee;
+}
+
+.schedule-row.is-past .block-cell{
+  background:#eeeeee;
+}
+
+.schedule-row.is-past .activity-cell.is-soft{
+  background:var(--soft)!important;
+}
+
+.schedule-row.is-past .activity-cell.is-strong{
+  background:var(--strong)!important;
+}
+
+/* Alinear verticalmente primeras 4 columnas y comentarios */
+.class-no,
+.class-day,
+.class-date,
+.class-room,
+.comment-cell{
+  align-items:center!important;
+  justify-content:center;
+}
+
+.comment-cell{
+  justify-content:flex-start;
+}
+
+/* Clase actual: toda actividad va negra/blanca */
+.schedule-row.is-next .activity-cell:not(.is-devolucion){
+  background:#000!important;
+  color:#fff!important;
+}
+
+/* Devoluc. en clase actual: texto negro, fondo gris normal */
+.schedule-row.is-next .activity-cell.is-devolucion{
+  background:transparent!important;
+  color:#000!important;
+}
+
+/* Título de tabla más importante */
+.schedule-head > div{
+  padding-top:7px!important;
+  padding-bottom:7px!important;
+}
+
+/* Fondo blanco detrás de la zona de la manito */
+.schedule{
+  background:#fff;
+}
+
+.schedule-card{
+  background:#fff;
+}
+
+.next-hand{
+  background:#fff;
+  padding-right:3px;
+}
