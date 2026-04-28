@@ -21,7 +21,7 @@
   --sticky-4:52px;
 
   --past-bg:#eeeeee;
-  --past-text:#999;
+  --past-text:#c3c3c3;
   --current-bg:#d9d9d9;
   --empty-bg:#eeeeee;
 
@@ -139,7 +139,7 @@ body{
 
 /* CUERPO */
 .schedule-body .schedule-row{
-  border-bottom:1px solid var(--border);
+  border-bottom:0;
   min-height:25px;
   transition:background-color .12s ease, box-shadow .12s ease, filter .12s ease;
 }
@@ -153,7 +153,16 @@ body{
 .schedule-body .schedule-row:hover .special-cell,
 .schedule-body .schedule-row:hover .activity-cell{filter:brightness(.97)}
 .schedule-body .schedule-row>div{border-right:1px dotted #d6d6d6}
+.schedule-body .schedule-row > .hand-gutter{
+  border-top:0!important;
+  border-bottom:0!important;
+  border-right:0!important;
+  background:#fff!important;
+}
 .schedule-body .schedule-row>div:last-child{border-right:0}
+.schedule-body .schedule-row > div:not(.hand-gutter){
+  border-bottom:1px solid var(--border);
+}
 
 .class-no,.class-day,.class-date,.class-room,.comment-cell,.block-cell,.special-cell,.activity-cell,.hand-gutter{
   font-size:13px;
