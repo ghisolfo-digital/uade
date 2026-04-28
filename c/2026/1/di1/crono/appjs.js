@@ -389,16 +389,12 @@ function renderActivity(item) {
   ].filter(Boolean).join(" ");
 
   const label = escapeHTML(item.actividad || item.comentario || "-");
-  const titleParts = [];
-  if (item.comentario) titleParts.push(item.comentario);
-  if (item.tarea) titleParts.push(`Tarea: ${item.tarea}`);
-  if (item.asistenciaObligatoria) titleParts.push("Asistencia obligatoria");
-  const title = titleParts.length ? ` title="${escapeHTML(titleParts.join(" · "))}"` : "";
 
   if (item.link) {
-    return `<a class="${classes}" href="${escapeHTML(item.link)}" target="_blank" rel="noopener noreferrer"${title}>${label}</a>`;
+    return `<a class="${classes}" href="${escapeHTML(item.link)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
   }
-  return `<span class="${classes}"${title}>${label}</span>`;
+
+  return `<span class="${classes}">${label}</span>`;
 }
 
 function showError(error) {
