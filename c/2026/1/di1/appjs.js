@@ -400,7 +400,7 @@ function initInteractions() {
 
     items.forEach(li => {
       const tipo = li.dataset.tipo || "";
-      const visible = noneSelected ? true : active.includes(tipo);
+      const visible = !noneSelected && active.includes(tipo);
       li.classList.toggle("is-hidden", !visible);
     });
 
