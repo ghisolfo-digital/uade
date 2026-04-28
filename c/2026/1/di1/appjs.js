@@ -2,8 +2,8 @@
    CONFIG
    ========================= */
 
-const SHEET_ID = "2PACX-1vQua7bRuLUCEn5RNhFUrPchYU2VakNelZINjffYABqegNVOVx8UvRMy95GuTLj73v_pWSNosbW8TDfZ";
-const GID = "1536491413";
+const SHEET_ID = "2PACX-1vTzorEweuNXvqkPaIG3BD2jICRf1pglBSIXC1WnxhqwvMXn1_U-JM_6XowKyGI82pMsc7YfqxjN5zLi";
+const GID = "1268474664";
 
 function getCsvUrl() {
   const ltdata1 = String.fromCharCode(100);
