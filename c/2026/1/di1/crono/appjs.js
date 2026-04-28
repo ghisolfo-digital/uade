@@ -278,7 +278,7 @@ function render(data) {
   document.getElementById("header-brand").textContent = data.headerBrand;
 
   const timeText = data.timeStart && data.timeEnd ? ` · ${data.timeStart} a ${data.timeEnd} hs` : "";
-  document.getElementById("header-subline").textContent = `${data.firstField || "Cronograma"}${timeText}`;
+  document.getElementById("header-subline").textContent = "";
   document.title = `Cronograma - ${data.firstField || data.headerTitle} - @ghisolfo.digital`;
 
   if (data.groups.length === 0) {
@@ -292,10 +292,10 @@ function render(data) {
   schedule.innerHTML = `
     <div class="schedule-card">
       <div class="schedule-row schedule-head">
-        <div class="head-class">Clase</div>
-        <div class="head-day">Día</div>
-        <div class="head-date">Fecha</div>
-        <div class="head-room">Aula</div>
+        <div class="head-class cell-sticky cell-sticky-1">Clase</div>
+        <div class="head-day cell-sticky cell-sticky-2">Día</div>
+        <div class="head-date cell-sticky cell-sticky-3">Fecha</div>
+        <div class="head-room cell-sticky cell-sticky-4">Aula</div>
         ${data.blocks.map((b, i) => `
           <div class="head-block block-${(i % 8) + 1}" data-block="${escapeHTML(b.slug)}" style="${blockStyle(b)}">${escapeHTML(b.label)}</div>
         `).join("")}
@@ -326,10 +326,10 @@ function renderGroup(group, index, nextIdx, blocks) {
   if (isSpecial) {
     return `
       <div class="${rowClasses}">
-        <div class="class-no">${isNext ? `<span class="next-hand">👉</span>` : ""}${escapeHTML(classNo)}</div>
-        <div class="class-day">${escapeHTML(day)}</div>
-        <div class="class-date">${escapeHTML(formatDateShort(group.fecha))}</div>
-        <div class="class-room">${escapeHTML(group.aula || "")}</div>
+        <div class="class-no cell-sticky cell-sticky-1">${isNext ? `<span class="next-hand">👉</span>` : ""}${escapeHTML(classNo)}</div>
+        <div class="class-day cell-sticky cell-sticky-2">${escapeHTML(day)}</div>
+        <div class="class-date cell-sticky cell-sticky-3">${escapeHTML(formatDateShort(group.fecha))}</div>
+        <div class="class-room cell-sticky cell-sticky-4">${escapeHTML(group.aula || "")}</div>
         <div class="special-cell" style="grid-column: span ${Math.max(blocks.length + 1, 1)};">
           ${escapeHTML(group.comentario || typeLabel)}
         </div>
@@ -339,10 +339,10 @@ function renderGroup(group, index, nextIdx, blocks) {
 
   return `
     <div class="${rowClasses}">
-      <div class="class-no">${isNext ? `<span class="next-hand">👉</span>` : ""}${escapeHTML(classNo)}</div>
-      <div class="class-day">${escapeHTML(day)}</div>
-      <div class="class-date">${escapeHTML(formatDateShort(group.fecha))}</div>
-      <div class="class-room">${escapeHTML(group.aula || "-")}</div>
+      <div class="class-no cell-sticky cell-sticky-1">${isNext ? `<span class="next-hand">👉</span>` : ""}${escapeHTML(classNo)}</div>
+      <div class="class-day cell-sticky cell-sticky-2">${escapeHTML(day)}</div>
+      <div class="class-date cell-sticky cell-sticky-3">${escapeHTML(formatDateShort(group.fecha))}</div>
+      <div class="class-room cell-sticky cell-sticky-4">${escapeHTML(group.aula || "-")}</div>
       ${blocks.map((block, i) => renderBlockCell(group, block, i)).join("")}
       <div class="comment-cell">${escapeHTML(group.comentario || "")}</div>
     </div>
@@ -364,10 +364,11 @@ function renderBlockCell(group, block, blockIndex) {
 }
 
 function renderActivity(item) {
+  const isDevolucion = /devoluc|devolución/i.test(item.actividad || "");
   const classes = [
     "activity-cell",
     item.destacado ? "is-strong" : "is-soft",
-    item.asistenciaObligatoria ? "is-required" : ""
+    isDevolucion ? "is-devolucion" : ""
   ].filter(Boolean).join(" ");
 
   const label = escapeHTML(item.actividad || item.comentario || "-");
