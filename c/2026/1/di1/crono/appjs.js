@@ -123,8 +123,13 @@ function parseDateRelaxed(str) {
 }
 
 function getDayName(date) {
-  const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   return days[date.getDay()];
+}
+
+function formatDateShort(value) {
+  const v = clean(value);
+  return v.replace(/\/\d{4}$/, "");
 }
 
 function formatClassNumber(value) {
@@ -136,6 +141,35 @@ function todayLocal() {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   return d;
+}
+
+function mixWithWhite(hex, amount = 0.62) {
+  const c = clean(hex).replace("#", "");
+  if (!/^[0-9a-fA-F]{6}$/.test(c)) return "";
+  const n = parseInt(c, 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  const mr = Math.round(r + (255 - r) * amount);
+  const mg = Math.round(g + (255 - g) * amount);
+  const mb = Math.round(b + (255 - b) * amount);
+  return `rgb(${mr}, ${mg}, ${mb})`;
+}
+
+function normalizeColor(value) {
+  const v = clean(value);
+  if (!v) return "";
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) return v;
+  if (/^[0-9a-fA-F]{6}$/.test(v)) return `#${v}`;
+  if (/^rgb\(/i.test(v) || /^hsl\(/i.test(v)) return v;
+  return "";
+}
+
+function blockStyle(block) {
+  const styles = [];
+  if (block.soft) styles.push(`--soft:${block.soft}`);
+  if (block.strong) styles.push(`--strong:${block.strong}`);
+  return styles.length ? styles.join(";") : "";
 }
 
 /* =========================
@@ -150,6 +184,17 @@ function readData(rows) {
   const headerBrand = clean(pageHeader[3]);
   const timeStart = clean(pageHeader[4]);
   const timeEnd = clean(pageHeader[5]);
+
+  const blockDefs = new Map();
+  rows.slice(1).forEach(r => {
+    if (clean(r[0]).toLowerCase() !== "bloques") return;
+    const label = clean(r[1]);
+    if (!label) return;
+    const slug = slugify(label);
+    const strong = normalizeColor(r[2]);
+    const soft = normalizeColor(r[3]) || (strong ? mixWithWhite(strong) : "");
+    blockDefs.set(slug, { label, slug, strong, soft });
+  });
 
   const classRows = rows
     .slice(1)
@@ -196,26 +241,23 @@ function readData(rows) {
 
   const blocks = [];
   const seen = new Set();
+
+  blockDefs.forEach(def => {
+    seen.add(def.slug);
+    blocks.push(def);
+  });
+
   classRows.forEach(item => {
     const block = item.bloque || (item.asistenciaObligatoria ? "Asistencia" : "");
     if (!block) return;
     const slug = slugify(block);
     if (!seen.has(slug)) {
       seen.add(slug);
-      blocks.push({ label: block, slug });
+      blocks.push({ label: block, slug, strong: "", soft: "" });
     }
   });
 
-  return {
-    firstField,
-    headerTitle,
-    headerMeta,
-    headerBrand,
-    timeStart,
-    timeEnd,
-    groups,
-    blocks
-  };
+  return { firstField, headerTitle, headerMeta, headerBrand, timeStart, timeEnd, groups, blocks };
 }
 
 function getNextClassIndex(groups) {
@@ -250,10 +292,14 @@ function render(data) {
   schedule.innerHTML = `
     <div class="schedule-card">
       <div class="schedule-row schedule-head">
-        <div class="head-main">Clase</div>
+        <div class="head-class">Clase</div>
+        <div class="head-day">Día</div>
+        <div class="head-date">Fecha</div>
+        <div class="head-room">Aula</div>
         ${data.blocks.map((b, i) => `
-          <div class="head-block block-${(i % 8) + 1}" data-block="${escapeHTML(b.slug)}">${escapeHTML(b.label)}</div>
+          <div class="head-block block-${(i % 8) + 1}" data-block="${escapeHTML(b.slug)}" style="${blockStyle(b)}">${escapeHTML(b.label)}</div>
         `).join("")}
+        <div class="head-comment">Comentarios</div>
       </div>
       <div class="schedule-body">
         ${data.groups.map((group, index) => renderGroup(group, index, nextIdx, data.blocks)).join("")}
@@ -280,14 +326,12 @@ function renderGroup(group, index, nextIdx, blocks) {
   if (isSpecial) {
     return `
       <div class="${rowClasses}">
-        <div class="class-cell">
-          ${isNext ? `<span class="next-hand">👈</span>` : ""}
-          <div class="class-number">${escapeHTML(classNo)}</div>
-          <div class="class-date">${escapeHTML(day)} ${escapeHTML(group.fecha)}</div>
-          <div class="class-room">${escapeHTML(typeLabel)}</div>
-        </div>
-        <div class="special-cell" style="grid-column: span ${Math.max(blocks.length, 1)};">
-          <span class="special-label">${escapeHTML(group.comentario || typeLabel)}</span>
+        <div class="class-no">${isNext ? `<span class="next-hand">👉</span>` : ""}${escapeHTML(classNo)}</div>
+        <div class="class-day">${escapeHTML(day)}</div>
+        <div class="class-date">${escapeHTML(formatDateShort(group.fecha))}</div>
+        <div class="class-room">${escapeHTML(group.aula || "")}</div>
+        <div class="special-cell" style="grid-column: span ${Math.max(blocks.length + 1, 1)};">
+          ${escapeHTML(group.comentario || typeLabel)}
         </div>
       </div>
     `;
@@ -295,13 +339,12 @@ function renderGroup(group, index, nextIdx, blocks) {
 
   return `
     <div class="${rowClasses}">
-      <div class="class-cell">
-        ${isNext ? `<span class="next-hand">👈</span>` : ""}
-        <div class="class-number">Clase ${escapeHTML(classNo)}</div>
-        <div class="class-date">${escapeHTML(day)} ${escapeHTML(group.fecha)}</div>
-        <div class="class-room">Aula ${escapeHTML(group.aula || "-")} · ${escapeHTML(typeLabel)}</div>
-      </div>
+      <div class="class-no">${isNext ? `<span class="next-hand">👉</span>` : ""}${escapeHTML(classNo)}</div>
+      <div class="class-day">${escapeHTML(day)}</div>
+      <div class="class-date">${escapeHTML(formatDateShort(group.fecha))}</div>
+      <div class="class-room">${escapeHTML(group.aula || "-")}</div>
       ${blocks.map((block, i) => renderBlockCell(group, block, i)).join("")}
+      <div class="comment-cell">${escapeHTML(group.comentario || "")}</div>
     </div>
   `;
 }
@@ -309,11 +352,12 @@ function renderGroup(group, index, nextIdx, blocks) {
 function renderBlockCell(group, block, blockIndex) {
   const items = group.rows.filter(item => slugify(item.bloque) === block.slug);
   const colorClass = `block-${(blockIndex % 8) + 1}`;
+  const style = blockStyle(block);
 
-  if (items.length === 0) return `<div class="block-cell empty-cell ${colorClass}" aria-hidden="true"></div>`;
+  if (items.length === 0) return `<div class="block-cell empty-cell ${colorClass}" style="${style}" aria-hidden="true"></div>`;
 
   return `
-    <div class="block-cell ${colorClass}">
+    <div class="block-cell ${colorClass}" style="${style}">
       ${items.map(item => renderActivity(item)).join("")}
     </div>
   `;
@@ -321,7 +365,7 @@ function renderBlockCell(group, block, blockIndex) {
 
 function renderActivity(item) {
   const classes = [
-    "activity-pill",
+    "activity-cell",
     item.destacado ? "is-strong" : "is-soft",
     item.asistenciaObligatoria ? "is-required" : ""
   ].filter(Boolean).join(" ");
