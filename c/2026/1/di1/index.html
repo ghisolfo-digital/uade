@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="estilos.css?v=001">
+  <title>Teóricas, links y materiales - Listado - @ghisolfo.digital</title>
+  <script src="appjs.js?v=001" defer></script>
+</head>
+<body>
+<header class="site-header header-sticky">
+  <div class="wrap">
+    <div class="header-top">
+      <div class="title" id="header-title">Cargando…</div>
+      <div class="meta" id="header-meta"></div>
+      <div class="brand">
+        <span class="pill" id="header-brand"></span>
+      </div>
+    </div>
+
+    <div class="filters-row">
+      <details class="filters-panel" open>
+        <summary class="filters-title">Filtrar por tipo de contenido</summary>
+      </details>
+
+      <div class="filters-side-actions filters-actions">
+        <button type="button" class="icon-btn btn-all" title="Seleccionar todo" aria-label="Seleccionar todo">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+
+        <button type="button" class="icon-btn btn-clear" title="Ocultar todo" aria-label="Ocultar todo">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3l18 18"/>
+            <path d="M9.88 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a16.3 16.3 0 0 1-4.2 5.05"/>
+            <path d="M6.6 6.6C4.83 7.76 3.37 9.56 2 12c0 0 4 8 11 8 1.64 0 3.17-.3 4.56-.86"/>
+            <path d="M10.58 10.58A3 3 0 0 0 12 15a3 3 0 0 0 2.42-4.42"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="filters filters--in-header" id="filters-box">
+      <div class="filters-body" id="filters-body"></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="groups-actions">
+    <button type="button" class="btn-toggle-flat">Ver todo junto</button>
+    <button type="button" id="btn-expand-groups" class="btn-expand">Abrir</button>
+    <button type="button" id="btn-collapse-groups" class="btn-collapse">Cerrar</button>
+  </div>
+
+  <div id="status-message">Cargando materiales…</div>
+  <div class="grid" id="grid" style="--cols:2;"></div>
+
+  <div class="groups-actions groups-actions--bottom">
+    <button type="button" class="btn-toggle-flat">Ver todo junto</button>
+    <button type="button" id="btn-expand-groups-bottom" class="btn-expand">Abrir</button>
+    <button type="button" id="btn-collapse-groups-bottom" class="btn-collapse">Cerrar</button>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-left">
+      <span class="footer-name">Alvaro G. Ghisolfo</span>
+
+      <a class="slink" href="https://instagram.com/ghisolfo.digital" target="_blank" rel="noopener" aria-label="Instagram">
+        <i class="ti ti-brand-instagram"></i>
+      </a>
+      <a class="slink" href="https://discord.gg/sxXRJxqCMV" target="_blank" rel="noopener" aria-label="Discord">
+        <i class="ti ti-brand-discord"></i>
+      </a>
+      <a class="slink" href="https://ghisolfo.digital" target="_blank" rel="noopener" aria-label="Sitio web">
+        <i class="ti ti-world"></i>
+      </a>
+    </div>
+
+    <a class="footer-right"
+       href="https://instagram.com/ghisolfo.digital"
+       target="_blank" rel="noopener"
+       aria-label="Instagram: @ghisolfo.digital">
+      <i class="ti ti-brand-instagram"></i>
+      <span class="footer-domain">ghisolfo.digital</span>
+    </a>
+  </div>
+</footer>
+
+<button id="fab-down" class="fab-scroll-down" type="button" aria-label="Ir al final">
+  <i class="ti ti-arrow-down"></i>
+</button>
+</body>
+</html>
