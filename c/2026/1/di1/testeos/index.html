@@ -34,6 +34,16 @@
       </div>
     </div>
   </header>
+<div id="selected-team-bar" class="selected-team-bar" hidden>
+  <div class="selected-team-inner">
+    <span id="selected-team-text">Estás viendo…</span>
+    <button id="clear-team-button" type="button" aria-label="Ver todos los equipos">
+      <span>Ver todo</span>
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+</div>
+
 <div class="intro-wrap">
   <p id="site-subtitle">Cargando información...</p>
 </div>
@@ -47,7 +57,7 @@
     </section>
 
     <section>
-      <h2 class="section-title-row">
+      <h2 class="section-title-row section-band">
         <span>
           Qué está pasando ahora
           <span class="section-title-clock">🕒 <span id="current-clock-title">--:--</span> hs.</span>
@@ -57,7 +67,7 @@
     </section>
 
     <section id="my-section" style="display:none;">
-      <h2>Mi equipo</h2>
+      <h2 class="section-band">Mi equipo</h2>
       <div id="my-now" class="card"></div>
 
       <div style="height:12px"></div>
@@ -76,12 +86,12 @@
     </section>
 
     <section>
-      <h2>Grilla general</h2>
+      <h2 class="section-band">Grilla general</h2>
       <div id="tables" class="tables"></div>
     </section>
 
     <section>
-      <h2>Aclaraciones</h2>
+      <h2 class="section-band">Aclaraciones</h2>
       <div id="texts" class="texts"></div>
     </section>
   </main>

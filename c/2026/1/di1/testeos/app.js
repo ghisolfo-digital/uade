@@ -227,6 +227,7 @@ function renderAll() {
   renderHeader();
   renderSelector();
   renderLinks();
+  renderSelectedTeamBar();
   renderClockTitle();
   renderCurrentStatus();
   renderTables();
@@ -245,6 +246,36 @@ function renderClockTitle() {
       document.getElementById('site-title').textContent = app.config.titulo || 'Testeos UX';
       document.getElementById('site-subtitle').textContent = app.config.bajada || '';
     }
+
+
+    function renderSelectedTeamBar() {
+  const bar = document.getElementById('selected-team-bar');
+  const text = document.getElementById('selected-team-text');
+  const clearButton = document.getElementById('clear-team-button');
+
+  if (!bar || !text || !clearButton) return;
+
+  if (!app.selectedTeam) {
+    bar.hidden = true;
+    return;
+  }
+
+  bar.hidden = false;
+  text.textContent = `Estás viendo ${app.selectedTeam} · ${teamName(app.selectedTeam)}`;
+
+  clearButton.onclick = () => {
+    app.selectedTeam = '';
+
+    const select = document.getElementById('team-select');
+    if (select) select.value = '';
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('e');
+    history.pushState({}, '', url);
+
+    renderAll();
+  };
+}
 
     function renderSelector() {
       const select = document.getElementById('team-select');
