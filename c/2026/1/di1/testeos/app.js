@@ -464,34 +464,43 @@ function renderScheduleBlock(row) {
   `;
 }
 
-    function renderMySection() {
-      const section = document.getElementById('my-section');
+function renderMySection() {
+  const section = document.getElementById('my-section');
 
-      if (!app.selectedTeam) {
-        section.style.display = 'none';
-        return;
-      }
+  if (!app.selectedTeam) {
+    section.style.display = 'none';
+    return;
+  }
 
-      section.style.display = 'block';
+  section.style.display = 'block';
 
-      const actions = myActions(app.selectedTeam);
-      const nowAction = currentActionForTeam(app.selectedTeam);
-      const nextAction = nextActionForTeam(app.selectedTeam);
+  const actions = myActions(app.selectedTeam);
+  const nowAction = currentActionForTeam(app.selectedTeam);
+  const nextAction = nextActionForTeam(app.selectedTeam);
 
-      document.getElementById('my-now').innerHTML = renderMyNow(nowAction, nextAction);
-      document.getElementById('my-agenda').innerHTML = actions.map(action => renderAction(action)).join('');
+  document.getElementById('my-now').innerHTML = renderMyNow(nowAction, nextAction);
 
-      const breakBlocks = app.allBlocks.filter(block => {
-        return !actions.some(action =>
-          action.horaInicio === block.horaInicio &&
-          action.horaCierre === block.horaCierre
-        );
-      });
+  const fullAgenda = app.allBlocks.map(block => {
+    const action = actions.find(action =>
+      action.horaInicio === block.horaInicio &&
+      action.horaCierre === block.horaCierre
+    );
 
-      document.getElementById('my-breaks').innerHTML = breakBlocks
-        .map(block => `<span class="break-pill">☕ ${escapeHTML(blockLabel(block))}</span>`)
-        .join('');
-    }
+    if (action) return action;
+
+    return {
+      horaInicio: block.horaInicio,
+      horaCierre: block.horaCierre,
+      aula: '',
+      rol: 'Break',
+      detalle: 'Descanso'
+    };
+  });
+
+  document.getElementById('my-agenda').innerHTML = fullAgenda
+    .map(item => renderAction(item))
+    .join('');
+}
 
     function renderMyNow(nowAction, nextAction) {
       const myTeam = teamLabel(app.selectedTeam);
@@ -521,13 +530,21 @@ function renderScheduleBlock(row) {
 function renderAction(action) {
   const now = isActionNow(action);
   const isFeedback = action.rol === 'Das feedback';
-  const emoji = isFeedback ? '👈' : '📱';
+  const isBreak = action.rol === 'Break';
+
+  const emoji = isBreak ? '☕' : (isFeedback ? '👈' : '📱');
+  const lugar = isBreak ? 'Break' : `Aula ${escapeHTML(action.aula)}`;
+  const rolTexto = isFeedback ? 'Das feedback a' : action.rol;
 
   return `
-    <div class="agenda-item ${now ? 'now' : ''}">
-      <div class="agenda-main">🕒 ${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>
-      <div>${emoji} ${escapeHTML(action.rol)}${isFeedback ? ' a' : ''}</div>
-      <div class="sub">${escapeHTML(action.detalle)}</div>
+    <div class="agenda-item ${now ? 'now' : ''} ${isBreak ? 'is-break' : ''}">
+      <div class="agenda-main">${emoji} 🕒 ${escapeHTML(blockLabel(action))} · ${lugar}</div>
+      ${isBreak ? `
+        <div class="sub">Descanso</div>
+      ` : `
+        <div>${emoji} ${escapeHTML(rolTexto)}</div>
+        <div class="sub">${escapeHTML(action.detalle)}</div>
+      `}
     </div>
   `;
 }
