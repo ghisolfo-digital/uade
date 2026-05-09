@@ -131,8 +131,12 @@ main {
 
 @media (max-width: 640px) {
   .header-top {
-    grid-template-columns: 1fr;
-    align-items: start;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+  .header-actions {
+    justify-content: flex-end;
+    align-self: center;
   }
 
   .site-header .title {
@@ -1045,18 +1049,34 @@ main > section > h2 {
 }
 
 .header-menu {
-  position: absolute;
-  top: calc(100% + 8px);
+  position: fixed;
+  top: 0;
   right: 0;
-  width: min(285px, calc(100vw - 24px));
-  padding: 8px;
-  border-radius: 16px;
+  width: min(75vw, 360px);
+  height: 100dvh;
+  padding: 72px 14px 18px;
   background: #ffffff;
   color: var(--text);
-  box-shadow: 0 12px 30px rgba(0,0,0,.28);
-  border: 1px solid rgba(0,0,0,.08);
-  display: none;
-  z-index: 1500;
+  box-shadow: -12px 0 30px rgba(0,0,0,.28);
+  border-left: 1px solid rgba(0,0,0,.12);
+  border-radius: 0;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  z-index: 3000;
+
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform .22s ease,
+    opacity .22s ease;
+}
+
+.header-menu.is-open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .header-menu.is-open {
@@ -1092,9 +1112,9 @@ main > section > h2 {
 }
 
 .menu-link.is-active {
-  background: var(--selected-team, #eeff41);
-  color: #141800;
-  outline: 1px solid var(--selected-team-border, #a6b51f);
+  background: #e8ece6;
+  color: #111;
+  outline: 1px solid #c8d0c4;
 }
 
 .menu-separator {
@@ -1122,6 +1142,18 @@ main > section > h2 {
 
 .menu-feedback-btn:hover {
   background: #124116;
+}
+
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2990;
+  background: rgba(0,0,0,.45);
+  opacity: 1;
+}
+
+.menu-backdrop[hidden] {
+  display: none;
 }
 
 .anchor-offset {

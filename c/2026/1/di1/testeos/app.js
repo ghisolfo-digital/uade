@@ -886,31 +886,49 @@ function formatText(text) {
       return rows.filter(r => r.some(c => String(c).trim() !== ''));
     }
 
-    function setupHeaderMenu() {
+function setupHeaderMenu() {
   const button = document.getElementById('menu-button');
   const menu = document.getElementById('header-menu');
+  const backdrop = document.getElementById('menu-backdrop');
 
   if (!button || !menu) return;
 
   button.addEventListener('click', event => {
     event.stopPropagation();
-    const isOpen = menu.classList.toggle('is-open');
+
+    const isOpen = !menu.classList.contains('is-open');
+
+    menu.classList.toggle('is-open', isOpen);
     button.classList.toggle('is-open', isOpen);
     button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+    if (backdrop) backdrop.hidden = !isOpen;
   });
 
-  menu.addEventListener('click', event => {
-    const clickedLink = event.target.closest('a[href^="#"]');
-    if (!clickedLink) return;
+  if (backdrop) {
+    backdrop.addEventListener('click', closeHeaderMenu);
+  }
 
+menu.addEventListener('click', event => {
+  const clickedLink = event.target.closest('a[href^="#"]');
+  if (!clickedLink) return;
+
+  const targetId = clickedLink.getAttribute('href').replace('#', '');
+
+  if (targetId === 'mi-equipo' && !app.selectedTeam) {
+    event.preventDefault();
     closeHeaderMenu();
-  });
 
-  document.addEventListener('click', event => {
-    if (!menu.classList.contains('is-open')) return;
-    if (menu.contains(event.target) || button.contains(event.target)) return;
-    closeHeaderMenu();
-  });
+    const selector = document.querySelector('.selector-card');
+    if (selector) {
+      selector.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    return;
+  }
+
+  closeHeaderMenu();
+});
 
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
@@ -923,12 +941,15 @@ function formatText(text) {
 function closeHeaderMenu() {
   const button = document.getElementById('menu-button');
   const menu = document.getElementById('header-menu');
+  const backdrop = document.getElementById('menu-backdrop');
 
   if (!button || !menu) return;
 
   menu.classList.remove('is-open');
   button.classList.remove('is-open');
   button.setAttribute('aria-expanded', 'false');
+
+  if (backdrop) backdrop.hidden = true;
 }
 
 function setupQrLightbox() {
@@ -962,10 +983,18 @@ function closeQrLightbox() {
 function setupSectionSpy() {
   const links = Array.from(document.querySelectorAll('[data-section-link]'));
 
+  function getTarget(id) {
+    if (id === 'mi-equipo') {
+      return document.getElementById('my-section');
+    }
+
+    return document.getElementById(id);
+  }
+
   const sectionMap = links
     .map(link => {
       const id = link.getAttribute('data-section-link');
-      const section = document.getElementById(id);
+      const section = getTarget(id);
       return { id, link, section };
     })
     .filter(item => item.section);
@@ -974,22 +1003,23 @@ function setupSectionSpy() {
 
   const observer = new IntersectionObserver(entries => {
     const visible = entries
-      .filter(entry => entry.isIntersecting)
+      .filter(entry => entry.isIntersecting && entry.target.offsetParent !== null)
       .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
 
     if (!visible) return;
 
-    const activeId = visible.target.id;
+    const activeItem = sectionMap.find(item => item.section === visible.target);
+    if (!activeItem) return;
 
     links.forEach(link => {
       link.classList.toggle(
         'is-active',
-        link.getAttribute('data-section-link') === activeId
+        link.getAttribute('data-section-link') === activeItem.id
       );
     });
   }, {
     root: null,
-    rootMargin: '-35% 0px -55% 0px',
+    rootMargin: '-30% 0px -55% 0px',
     threshold: [0, .25, .5, .75, 1]
   });
 
