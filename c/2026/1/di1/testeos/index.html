@@ -1,0 +1,894 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Testeos UX</title>
+
+  <style>
+    :root {
+      --bg: #f5f5f2;
+      --text: #222;
+      --muted: #666;
+      --card: #ffffff;
+      --line: #dddddd;
+      --yellow: #ece810;
+      --yellow-soft: #f8f7bd;
+      --blue-soft: #dfeeff;
+      --green-soft: #dff3df;
+      --gray-soft: #eeeeee;
+      --dark: #595957;
+      --radius: 18px;
+      --shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: var(--dark);
+      color: white;
+      padding: 22px 18px;
+    }
+
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 1.7rem;
+      line-height: 1.1;
+    }
+
+    header p {
+      margin: 0;
+      color: rgba(255,255,255,.82);
+      font-size: .95rem;
+    }
+
+    main {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    section {
+      margin: 18px 0;
+    }
+
+    h2 {
+      font-size: 1.18rem;
+      margin: 0 0 10px;
+    }
+
+    h3 {
+      font-size: 1rem;
+      margin: 0 0 8px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      border: 1px solid rgba(0,0,0,.04);
+    }
+
+    .selector-card {
+      display: grid;
+      gap: 10px;
+    }
+
+    label {
+      font-weight: 700;
+      font-size: .92rem;
+    }
+
+    select,
+    button,
+    a.button {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font: inherit;
+      background: white;
+      color: var(--text);
+    }
+
+    button,
+    a.button {
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .button-primary {
+      background: var(--yellow);
+      border-color: #d6d200;
+    }
+
+    .button-row {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr;
+    }
+
+    .status-grid,
+    .tables {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .status-card {
+      border-left: 8px solid var(--yellow);
+    }
+
+    .status-card.current-for-team {
+      background: var(--green-soft);
+    }
+
+    .eyebrow {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 800;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .big {
+      font-size: 1.22rem;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: .95rem;
+    }
+
+    .team-main {
+      font-weight: 850;
+      line-height: 1.12;
+    }
+
+    .team-topic {
+      display: block;
+      margin-top: 3px;
+      font-size: .78rem;
+      line-height: 1.18;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .team-label-large .team-main {
+      font-size: 1.08rem;
+    }
+
+    .team-label-large .team-topic {
+      font-size: .86rem;
+    }
+
+    .feedback-list {
+      margin-top: 10px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .pill {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      border-radius: 14px;
+      background: var(--gray-soft);
+      padding: 7px 10px;
+      font-size: .88rem;
+      font-weight: 700;
+    }
+
+    .pill.selected {
+      background: var(--yellow);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 560px;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: .92rem;
+    }
+
+    th {
+      background: #f1f1f1;
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    tr.is-now {
+      background: var(--yellow-soft);
+    }
+
+    td.is-selected {
+      background: var(--blue-soft);
+      font-weight: 800;
+    }
+
+    .my-agenda {
+      display: grid;
+      gap: 10px;
+    }
+
+    .agenda-item {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: white;
+    }
+
+    .agenda-item.now {
+      background: var(--yellow-soft);
+      border-color: #d6d200;
+    }
+
+    .agenda-main {
+      font-weight: 800;
+      font-size: 1rem;
+    }
+
+    .breaks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .break-pill {
+      display: inline-flex;
+      border-radius: 999px;
+      background: white;
+      border: 1px solid var(--line);
+      padding: 8px 12px;
+      font-weight: 800;
+    }
+
+    .notice {
+      background: #ffe2e2;
+      border-radius: 14px;
+      padding: 12px;
+      font-weight: 700;
+    }
+
+    .texts {
+      display: grid;
+      gap: 8px;
+    }
+
+    .text-item {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      line-height: 1.35;
+    }
+
+    footer {
+      margin-top: 22px;
+      padding: 20px 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    @media (min-width: 760px) {
+      .status-grid,
+      .tables {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .button-row {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1 id="site-title">Testeos UX</h1>
+    <p id="site-subtitle">Cargando información...</p>
+  </header>
+
+  <main>
+    <section class="card selector-card">
+      <label for="team-select">Soy del equipo...</label>
+      <select id="team-select">
+        <option value="">Elegir equipo</option>
+      </select>
+
+      <div class="button-row">
+        <button class="button-primary" id="share-button" type="button">Compartir mi link</button>
+        <a class="button" id="feedback-link" href="#" target="_blank" rel="noopener">Hacer feedback</a>
+        <a class="button" id="extra-link" href="#" target="_blank" rel="noopener">Link adicional</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Qué está pasando ahora</h2>
+      <div id="current-status" class="status-grid"></div>
+    </section>
+
+    <section id="my-section" style="display:none;">
+      <h2>Mi equipo</h2>
+      <div id="my-now" class="card"></div>
+
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <h3>Mis 3 bloques de actividad</h3>
+        <div id="my-agenda" class="my-agenda"></div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <h3>Mis breaks</h3>
+        <div id="my-breaks" class="breaks"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Grilla general</h2>
+      <div id="tables" class="tables"></div>
+    </section>
+
+    <section>
+      <h2>Aclaraciones</h2>
+      <div id="texts" class="texts"></div>
+    </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+
+  <script>
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQb2Ggbd5Y1VOwTbAI7CjvaHNDwyYs5Y5IuJQCtR2G1eF7pN_bECM4_EQKMPvmwUredXZ2vMmZ43uiu/pub?gid=331164853&single=true&output=csv';
+
+    const app = {
+      config: {},
+      teams: new Map(),
+      agenda: [],
+      texts: [],
+      links: {},
+      selectedTeam: null,
+      allTimes: []
+    };
+
+    init();
+
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      app.selectedTeam = params.get('e') || '';
+
+      try {
+        const csvText = await fetchCsv();
+        const rows = parseCSV(csvText);
+        parseData(rows);
+        renderAll();
+        setInterval(renderAll, 30000);
+      } catch (err) {
+        document.querySelector('main').innerHTML = `
+          <section class="notice">
+            No se pudo cargar el CSV. Revisá que el link esté publicado y que esté pegado correctamente en CSV_URL.
+          </section>
+        `;
+        console.error(err);
+      }
+    }
+
+    async function fetchCsv() {
+      const url = CSV_URL + (CSV_URL.includes('?') ? '&' : '?') + 'cache=' + Date.now();
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Error cargando CSV');
+      return await res.text();
+    }
+
+    function parseData(rows) {
+      rows.shift();
+
+      rows.forEach(row => {
+        const tipo = cell(row, 0).trim().toLowerCase();
+        const fila = cell(row, 1).trim().toLowerCase();
+
+        if (fila !== 'data') return;
+
+        const a = cell(row, 2);
+        const b = cell(row, 3);
+        const c = cell(row, 4);
+        const d = cell(row, 5);
+        const e = cell(row, 6);
+
+        if (tipo === 'config') {
+          app.config[a] = b;
+        }
+
+        if (tipo === 'equipos') {
+          app.teams.set(a, {
+            id: a,
+            nombre: b,
+            tematica: c
+          });
+        }
+
+        if (tipo === 'agenda') {
+          app.agenda.push({
+            hora: a,
+            aula: b,
+            testea: c,
+            feedback1: d,
+            feedback2: e
+          });
+        }
+
+        if (tipo === 'texto') {
+          app.texts.push({
+            orden: Number(a) || 999,
+            texto: b
+          });
+        }
+
+        if (tipo === 'links') {
+          app.links[a] = {
+            label: b,
+            url: c
+          };
+        }
+      });
+
+      app.agenda.sort((x, y) => timeToMin(x.hora) - timeToMin(y.hora) || x.aula.localeCompare(y.aula));
+      app.texts.sort((x, y) => x.orden - y.orden);
+      app.allTimes = [...new Set(app.agenda.map(item => item.hora))].sort((a, b) => timeToMin(a) - timeToMin(b));
+    }
+
+    function renderAll() {
+      renderHeader();
+      renderSelector();
+      renderLinks();
+      renderCurrentStatus();
+      renderTables();
+      renderMySection();
+      renderTexts();
+      renderFooter();
+    }
+
+    function renderHeader() {
+      document.title = app.config.titulo || 'Testeos UX';
+      document.getElementById('site-title').textContent = app.config.titulo || 'Testeos UX';
+      document.getElementById('site-subtitle').textContent = app.config.bajada || '';
+    }
+
+    function renderSelector() {
+      const select = document.getElementById('team-select');
+
+      if (select.options.length <= 1) {
+        for (const [id, data] of app.teams.entries()) {
+          const opt = document.createElement('option');
+          opt.value = id;
+          opt.textContent = `${id} · ${data.nombre}`;
+          select.appendChild(opt);
+        }
+      }
+
+      select.value = app.selectedTeam || '';
+
+      select.onchange = () => {
+        app.selectedTeam = select.value;
+        const url = new URL(window.location.href);
+
+        if (app.selectedTeam) {
+          url.searchParams.set('e', app.selectedTeam);
+        } else {
+          url.searchParams.delete('e');
+        }
+
+        history.pushState({}, '', url);
+        renderAll();
+      };
+
+      window.onpopstate = () => {
+        const params = new URLSearchParams(window.location.search);
+        app.selectedTeam = params.get('e') || '';
+        renderAll();
+      };
+    }
+
+    function renderLinks() {
+      setLink('feedback-link', app.links.feedback, 'Hacer feedback');
+      setLink('extra-link', app.links.extra, 'Link adicional');
+
+      document.getElementById('share-button').onclick = async () => {
+        const url = window.location.href;
+        const title = app.selectedTeam
+          ? `Agenda del equipo ${app.selectedTeam} · ${teamName(app.selectedTeam)}`
+          : app.config.titulo || 'Testeos UX';
+
+        try {
+          if (navigator.share) {
+            await navigator.share({ title, url });
+          } else {
+            await navigator.clipboard.writeText(url);
+            alert('Link copiado');
+          }
+        } catch (err) {
+          console.warn(err);
+        }
+      };
+    }
+
+    function setLink(id, data, fallbackLabel) {
+      const el = document.getElementById(id);
+      el.textContent = data?.label || fallbackLabel;
+
+      if (data?.url) {
+        el.href = data.url;
+        el.style.opacity = '1';
+        el.style.pointerEvents = 'auto';
+      } else {
+        el.href = '#';
+        el.style.opacity = '.45';
+        el.style.pointerEvents = 'none';
+      }
+    }
+
+    function renderCurrentStatus() {
+      const box = document.getElementById('current-status');
+      const nowRows = currentRows();
+
+      if (!nowRows.length) {
+        box.innerHTML = `
+          <div class="card">
+            <div class="eyebrow">Ahora</div>
+            <div class="big">No hay un bloque activo</div>
+            <div class="sub">Puede ser antes del primer turno o después del último.</div>
+          </div>
+        `;
+        return;
+      }
+
+      box.innerHTML = nowRows.map(row => {
+        const selectedIsHere = teamInRow(app.selectedTeam, row);
+
+        return `
+          <div class="card status-card ${selectedIsHere ? 'current-for-team' : ''}">
+            <div class="eyebrow">Aula ${escapeHTML(row.aula)} · ${escapeHTML(row.hora)}</div>
+            <div class="big team-label-large">Está testeando ${teamLabel(row.testea)}</div>
+            <div class="sub">Deberían estar dando feedback:</div>
+            <div class="feedback-list">
+              <span class="pill ${row.feedback1 === app.selectedTeam ? 'selected' : ''}">${teamLabel(row.feedback1)}</span>
+              <span class="pill ${row.feedback2 === app.selectedTeam ? 'selected' : ''}">${teamLabel(row.feedback2)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTables() {
+      const box = document.getElementById('tables');
+      const aulas = [...new Set(app.agenda.map(x => x.aula))].sort();
+
+      box.innerHTML = aulas.map(aula => {
+        const rows = app.agenda.filter(item => item.aula === aula);
+
+        return `
+          <div class="card">
+            <h3>Aula ${escapeHTML(aula)}</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Hora</th>
+                    <th>Testea</th>
+                    <th>Feedback 1</th>
+                    <th>Feedback 2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rows.map(row => renderAgendaRow(row)).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderAgendaRow(row) {
+      const now = currentTimeSlot();
+      const isNow = now && row.hora === now;
+
+      return `
+        <tr class="${isNow ? 'is-now' : ''}">
+          <td>${escapeHTML(row.hora)}</td>
+          <td class="${row.testea === app.selectedTeam ? 'is-selected' : ''}">${teamLabel(row.testea)}</td>
+          <td class="${row.feedback1 === app.selectedTeam ? 'is-selected' : ''}">${teamLabel(row.feedback1)}</td>
+          <td class="${row.feedback2 === app.selectedTeam ? 'is-selected' : ''}">${teamLabel(row.feedback2)}</td>
+        </tr>
+      `;
+    }
+
+    function renderMySection() {
+      const section = document.getElementById('my-section');
+
+      if (!app.selectedTeam) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = 'block';
+
+      const actions = myActions(app.selectedTeam);
+      const nowAction = currentActionForTeam(app.selectedTeam);
+      const nextAction = nextActionForTeam(app.selectedTeam);
+
+      document.getElementById('my-now').innerHTML = renderMyNow(nowAction, nextAction);
+      document.getElementById('my-agenda').innerHTML = actions.map(action => renderAction(action)).join('');
+
+      const breakTimes = app.allTimes.filter(hora => !actions.some(action => action.hora === hora));
+      document.getElementById('my-breaks').innerHTML = breakTimes.map(hora => `<span class="break-pill">${escapeHTML(hora)}</span>`).join('');
+    }
+
+    function renderMyNow(nowAction, nextAction) {
+      const myTeam = teamLabel(app.selectedTeam);
+
+      if (nowAction) {
+        return `
+          <div class="eyebrow">Ahora · ${myTeam}</div>
+          <div class="big">Aula ${escapeHTML(nowAction.aula)} · ${escapeHTML(nowAction.rol)}</div>
+          <div class="sub">${escapeHTML(nowAction.detalle)}</div>
+        `;
+      }
+
+      if (nextAction) {
+        return `
+          <div class="eyebrow">Ahora tenés break · ${myTeam}</div>
+          <div class="big">Próximo bloque: ${escapeHTML(nextAction.hora)} · Aula ${escapeHTML(nextAction.aula)}</div>
+          <div class="sub">${escapeHTML(nextAction.rol)} · ${escapeHTML(nextAction.detalle)}</div>
+        `;
+      }
+
+      return `
+        <div class="eyebrow">${myTeam}</div>
+        <div class="big">Ya no tenés más bloques pendientes</div>
+      `;
+    }
+
+    function renderAction(action) {
+      const now = currentTimeSlot();
+
+      return `
+        <div class="agenda-item ${action.hora === now ? 'now' : ''}">
+          <div class="agenda-main">${escapeHTML(action.hora)} · Aula ${escapeHTML(action.aula)}</div>
+          <div>${escapeHTML(action.rol)}</div>
+          <div class="sub">${escapeHTML(action.detalle)}</div>
+        </div>
+      `;
+    }
+
+    function renderTexts() {
+      const box = document.getElementById('texts');
+
+      if (!app.texts.length) {
+        box.innerHTML = `<div class="text-item">No hay aclaraciones cargadas.</div>`;
+        return;
+      }
+
+      box.innerHTML = app.texts.map(item => `
+        <div class="text-item">${escapeHTML(item.texto)}</div>
+      `).join('');
+    }
+
+    function renderFooter() {
+      document.getElementById('site-footer').textContent = app.config.footer || '';
+    }
+
+    function myActions(teamId) {
+      const actions = [];
+
+      app.agenda.forEach(row => {
+        if (row.testea === teamId) {
+          actions.push({
+            hora: row.hora,
+            aula: row.aula,
+            rol: 'Testeás',
+            detalle: 'Tu equipo presenta su producto'
+          });
+        }
+
+        if (row.feedback1 === teamId || row.feedback2 === teamId) {
+          actions.push({
+            hora: row.hora,
+            aula: row.aula,
+            rol: 'Das feedback',
+            detalle: `A ${plainTeamLabel(row.testea)}`
+          });
+        }
+      });
+
+      return actions.sort((a, b) => timeToMin(a.hora) - timeToMin(b.hora));
+    }
+
+    function currentActionForTeam(teamId) {
+      const now = currentTimeSlot();
+      if (!now) return null;
+      return myActions(teamId).find(action => action.hora === now) || null;
+    }
+
+    function nextActionForTeam(teamId) {
+      const nowMin = currentMinutes();
+      return myActions(teamId).find(action => timeToMin(action.hora) > nowMin) || null;
+    }
+
+    function currentRows() {
+      const slot = currentTimeSlot();
+      if (!slot) return [];
+      return app.agenda.filter(row => row.hora === slot);
+    }
+
+    function currentTimeSlot() {
+      if (!app.allTimes.length) return null;
+
+      const now = currentMinutes();
+
+      for (let i = 0; i < app.allTimes.length; i++) {
+        const start = timeToMin(app.allTimes[i]);
+        const next = app.allTimes[i + 1] ? timeToMin(app.allTimes[i + 1]) : start + 35;
+
+        if (now >= start && now < next) {
+          return app.allTimes[i];
+        }
+      }
+
+      return null;
+    }
+
+    function currentMinutes() {
+      const forced = new URLSearchParams(window.location.search).get('t');
+
+      if (forced && /^\d{1,2}:\d{2}$/.test(forced)) {
+        return timeToMin(forced);
+      }
+
+      const d = new Date();
+      return d.getHours() * 60 + d.getMinutes();
+    }
+
+    function timeToMin(time) {
+      const [h, m] = String(time).split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function teamData(id) {
+      return app.teams.get(String(id)) || {
+        id,
+        nombre: `Equipo ${id}`,
+        tematica: ''
+      };
+    }
+
+    function teamName(id) {
+      return teamData(id).nombre;
+    }
+
+    function plainTeamLabel(id) {
+      const data = teamData(id);
+      return `${id} · ${data.nombre}`;
+    }
+
+    function teamLabel(id) {
+      if (!id) return '';
+
+      const data = teamData(id);
+      const topic = data.tematica
+        ? `<span class="team-topic">${escapeHTML(data.tematica)}</span>`
+        : '';
+
+      return `
+        <span class="team-label">
+          <span class="team-main">${escapeHTML(id)} · ${escapeHTML(data.nombre)}</span>
+          ${topic}
+        </span>
+      `;
+    }
+
+    function teamInRow(teamId, row) {
+      if (!teamId) return false;
+      return row.testea === teamId || row.feedback1 === teamId || row.feedback2 === teamId;
+    }
+
+    function cell(row, index) {
+      return row[index] ? String(row[index]).trim() : '';
+    }
+
+    function escapeHTML(str) {
+      return String(str || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let cell = '';
+      let insideQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const next = text[i + 1];
+
+        if (char === '"' && insideQuotes && next === '"') {
+          cell += '"';
+          i++;
+          continue;
+        }
+
+        if (char === '"') {
+          insideQuotes = !insideQuotes;
+          continue;
+        }
+
+        if (char === ',' && !insideQuotes) {
+          row.push(cell);
+          cell = '';
+          continue;
+        }
+
+        if ((char === '\n' || char === '\r') && !insideQuotes) {
+          if (char === '\r' && next === '\n') i++;
+          row.push(cell);
+          rows.push(row);
+          row = [];
+          cell = '';
+          continue;
+        }
+
+        cell += char;
+      }
+
+      if (cell.length || row.length) {
+        row.push(cell);
+        rows.push(row);
+      }
+
+      return rows.filter(r => r.some(c => String(c).trim() !== ''));
+    }
+  </script>
+</body>
+</html>
