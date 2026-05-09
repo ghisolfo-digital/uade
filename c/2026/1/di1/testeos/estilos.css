@@ -242,10 +242,8 @@ a.button {
 }
 
 .section-title-clock {
-  display: inline-flex;
-  align-items: baseline;
-  gap: .45em;
-  margin-left: .45em;
+  display: inline;
+  margin-left: .25em;
   font-size: inherit;
   font-weight: inherit;
   color: var(--muted);
@@ -267,8 +265,8 @@ a.button {
 }
 
 .status-card.current-for-team {
-  background: #124116;
-  outline: 2px solid rgba(255,255,255,.35);
+  background: var(--green-dark);
+  outline: none;
 }
 
 
@@ -792,12 +790,8 @@ td.is-selected {
 }
 
 .selected-team-bar {
-  position: sticky;
-  top: var(--header-h, 66px);
-  z-index: 990;
-  background: #0f3518;
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  background: rgba(0,0,0,.18);
+  border-top: 1px solid rgba(255,255,255,.16);
 }
 
 .selected-team-bar[hidden] {
@@ -807,84 +801,84 @@ td.is-selected {
 .selected-team-inner {
   width: min(980px, 100%);
   margin: 0 auto;
-  padding: 7px 16px;
+  padding: 6px 16px 8px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: flex-start;
+  gap: 7px;
 }
 
-#selected-team-text {
-  font-size: .86rem;
-  line-height: 1.15;
-  font-weight: 700;
+.selected-team-prefix {
+  color: rgba(255,255,255,.78);
+  font-size: .82rem;
+  line-height: 1;
+  font-weight: 400;
 }
 
-#clear-team-button {
+.selected-team-pill {
   width: auto;
-  min-height: 26px;
+  min-height: 24px;
   border: 1px solid rgba(255,255,255,.45);
   border-radius: 999px;
-  padding: 4px 8px 4px 10px;
-  background: rgba(255,255,255,.12);
+  padding: 4px 7px 4px 9px;
+  background: rgba(255,255,255,.13);
   color: #fff;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: .74rem;
+  font-size: .82rem;
   line-height: 1;
-  font-weight: 700;
+  font-weight: 400;
   white-space: nowrap;
 }
 
-#clear-team-button i {
-  font-size: 15px;
+.selected-team-pill i {
+  font-size: 14px;
+  line-height: 1;
+  opacity: .85;
 }
 
+.selected-team-pill:hover {
+  background: rgba(255,255,255,.20);
+}
 
 .status-card .now-testing-line {
-  background: rgba(255,255,255,.16);
-  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(255,255,255,.88);
+  border: 1px solid rgba(255,255,255,.55);
   border-radius: 12px;
   padding: 9px 10px;
   margin-top: 8px;
   align-items: flex-start;
+  color: #142414;
 }
 
-.status-card .now-testing-line .team-label {
-  display: block;
+.status-card .now-testing-line .now-testing-label,
+.status-card .now-testing-line .team-topic {
+  color: rgba(20,36,20,.68);
 }
 
-.status-card .now-testing-label {
-  color: rgba(255,255,255,.82);
-}
-
-.status-card .now-testing-team .team-main {
-  font-size: 1.12rem;
-  font-weight: 850;
-}
-
-.status-card .now-testing-team .team-topic {
-  color: rgba(255,255,255,.78);
-  font-size: .82rem;
-  margin-top: 3px;
+.status-card .now-testing-line .team-main,
+.status-card .now-testing-line .now-testing-team {
+  color: #142414;
 }
 
 .status-card .pill {
-  background: rgba(255,255,255,.78);
-  color: #142414;
+  background: rgba(255,255,255,.28);
+  color: #f4fbf3;
   box-shadow: none;
 }
 
 .status-card .pill .team-main {
-  color: #142414;
-  font-weight: 700;
+  color: #f4fbf3;
+  font-weight: 650;
 }
 
 .status-card .pill.selected {
-  background: #ffffff;
-  outline: 2px solid rgba(255,255,255,.75);
+  background: rgba(255,255,255,.45);
+  outline: 1px solid rgba(255,255,255,.45);
 }
+
+
 
 .section-band {
   width: 100vw;
@@ -932,7 +926,7 @@ main > section > h2 {
 .tables > .card h3 {
   margin: 0;
   padding: 10px 12px;
-  background: #111;
+  background: #436d45;
   color: #fff;
   border-radius: var(--radius) var(--radius) 0 0;
 }

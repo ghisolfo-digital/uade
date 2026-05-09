@@ -228,12 +228,25 @@ function renderAll() {
   renderSelector();
   renderLinks();
   renderSelectedTeamBar();
+  renderMyTeamTitle();
   renderClockTitle();
   renderCurrentStatus();
   renderTables();
   renderMySection();
   renderTexts();
   renderFooter();
+}
+
+function renderMyTeamTitle() {
+  const title = document.getElementById('my-team-title');
+  if (!title) return;
+
+  if (!app.selectedTeam) {
+    title.textContent = 'Mi equipo';
+    return;
+  }
+
+  title.textContent = `Mi equipo 👥 ${app.selectedTeam} · ${teamName(app.selectedTeam)}`;
 }
 
 function renderClockTitle() {
@@ -248,7 +261,7 @@ function renderClockTitle() {
     }
 
 
-    function renderSelectedTeamBar() {
+function renderSelectedTeamBar() {
   const bar = document.getElementById('selected-team-bar');
   const text = document.getElementById('selected-team-text');
   const clearButton = document.getElementById('clear-team-button');
@@ -261,7 +274,7 @@ function renderClockTitle() {
   }
 
   bar.hidden = false;
-  text.textContent = `Estás viendo ${app.selectedTeam} · ${teamName(app.selectedTeam)}`;
+  text.textContent = `${app.selectedTeam} · ${teamName(app.selectedTeam)}`;
 
   clearButton.onclick = () => {
     app.selectedTeam = '';

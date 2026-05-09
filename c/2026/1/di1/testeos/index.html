@@ -32,17 +32,21 @@
   </a>
 </div>
       </div>
-    </div>
-  </header>
-<div id="selected-team-bar" class="selected-team-bar" hidden>
+
+      <div id="selected-team-bar" class="selected-team-bar" hidden>
   <div class="selected-team-inner">
-    <span id="selected-team-text">Estás viendo…</span>
-    <button id="clear-team-button" type="button" aria-label="Ver todos los equipos">
-      <span>Ver todo</span>
+    <span class="selected-team-prefix">Estás viendo</span>
+
+    <button id="clear-team-button" class="selected-team-pill" type="button" aria-label="Ver todos los equipos">
+      <span id="selected-team-text">Equipo seleccionado</span>
       <i class="ti ti-x"></i>
     </button>
   </div>
 </div>
+
+    </div>
+  </header>
+
 
 <div class="intro-wrap">
   <p id="site-subtitle">Cargando información...</p>
@@ -67,7 +71,7 @@
     </section>
 
     <section id="my-section" style="display:none;">
-      <h2 class="section-band">Mi equipo</h2>
+      <h2 class="section-band" id="my-team-title">Mi equipo</h2>
       <div id="my-now" class="card"></div>
 
       <div style="height:12px"></div>
