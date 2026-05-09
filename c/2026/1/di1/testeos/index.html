@@ -306,16 +306,16 @@
       font-size: .9rem;
     }
 
-    @media (min-width: 760px) {
-      .status-grid,
-      .tables {
-        grid-template-columns: 1fr 1fr;
-      }
+@media (min-width: 760px) {
+  .status-grid,
+  .tables {
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  }
 
-      .button-row {
-        grid-template-columns: 1fr 1fr 1fr;
-      }
-    }
+  .button-row {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
   </style>
 </head>
 
@@ -351,7 +351,7 @@
       <div style="height:12px"></div>
 
       <div class="card">
-        <h3>Mis 3 bloques de actividad</h3>
+        <h3>Mis bloques de actividad</h3>
         <div id="my-agenda" class="my-agenda"></div>
       </div>
 
@@ -445,15 +445,19 @@
           });
         }
 
-        if (tipo === 'agenda') {
-          app.agenda.push({
-            hora: a,
-            aula: b,
-            testea: c,
-            feedback1: d,
-            feedback2: e
-          });
-        }
+if (tipo === 'agenda') {
+  const feedbacks = row
+    .slice(5)
+    .map(value => String(value || '').trim())
+    .filter(value => value !== '');
+
+  app.agenda.push({
+    hora: a,
+    aula: b,
+    testea: c,
+    feedbacks
+  });
+}
 
         if (tipo === 'texto') {
           app.texts.push({
@@ -565,81 +569,101 @@
       }
     }
 
-    function renderCurrentStatus() {
-      const box = document.getElementById('current-status');
-      const nowRows = currentRows();
+function renderCurrentStatus() {
+  const box = document.getElementById('current-status');
+  const nowRows = currentRows();
 
-      if (!nowRows.length) {
-        box.innerHTML = `
-          <div class="card">
-            <div class="eyebrow">Ahora</div>
-            <div class="big">No hay un bloque activo</div>
-            <div class="sub">Puede ser antes del primer turno o después del último.</div>
-          </div>
-        `;
-        return;
-      }
+  if (!nowRows.length) {
+    box.innerHTML = `
+      <div class="card">
+        <div class="eyebrow">Ahora</div>
+        <div class="big">No hay un bloque activo</div>
+        <div class="sub">Puede ser antes del primer turno o después del último.</div>
+      </div>
+    `;
+    return;
+  }
 
-      box.innerHTML = nowRows.map(row => {
-        const selectedIsHere = teamInRow(app.selectedTeam, row);
+  box.innerHTML = nowRows.map(row => {
+    const selectedIsHere = teamInRow(app.selectedTeam, row);
 
-        return `
-          <div class="card status-card ${selectedIsHere ? 'current-for-team' : ''}">
-            <div class="eyebrow">Aula ${escapeHTML(row.aula)} · ${escapeHTML(row.hora)}</div>
-            <div class="big team-label-large">Está testeando ${teamLabel(row.testea)}</div>
-            <div class="sub">Deberían estar dando feedback:</div>
-            <div class="feedback-list">
-              <span class="pill ${row.feedback1 === app.selectedTeam ? 'selected' : ''}">${teamLabel(row.feedback1)}</span>
-              <span class="pill ${row.feedback2 === app.selectedTeam ? 'selected' : ''}">${teamLabel(row.feedback2)}</span>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
+    return `
+      <div class="card status-card ${selectedIsHere ? 'current-for-team' : ''}">
+        <div class="eyebrow">Aula ${escapeHTML(row.aula)} · ${escapeHTML(row.hora)}</div>
+        <div class="big team-label-large">Está testeando ${teamLabel(row.testea)}</div>
+        <div class="sub">Deberían estar dando feedback:</div>
+        <div class="feedback-list">
+          ${row.feedbacks.map(id => `
+            <span class="pill ${id === app.selectedTeam ? 'selected' : ''}">
+              ${teamLabel(id)}
+            </span>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
-    function renderTables() {
-      const box = document.getElementById('tables');
-      const aulas = [...new Set(app.agenda.map(x => x.aula))].sort();
 
-      box.innerHTML = aulas.map(aula => {
-        const rows = app.agenda.filter(item => item.aula === aula);
+function renderTables() {
+  const box = document.getElementById('tables');
+  const aulas = [...new Set(app.agenda.map(x => x.aula))].sort();
 
-        return `
-          <div class="card">
-            <h3>Aula ${escapeHTML(aula)}</h3>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Hora</th>
-                    <th>Testea</th>
-                    <th>Feedback 1</th>
-                    <th>Feedback 2</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${rows.map(row => renderAgendaRow(row)).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
+  box.innerHTML = aulas.map(aula => {
+    const rows = app.agenda.filter(item => item.aula === aula);
+    const maxFeedbacks = Math.max(...rows.map(row => row.feedbacks.length), 0);
 
-    function renderAgendaRow(row) {
-      const now = currentTimeSlot();
-      const isNow = now && row.hora === now;
+    const feedbackHeaders = Array.from({ length: maxFeedbacks }, (_, i) => `
+      <th>Feedback ${i + 1}</th>
+    `).join('');
 
-      return `
-        <tr class="${isNow ? 'is-now' : ''}">
-          <td>${escapeHTML(row.hora)}</td>
-          <td class="${row.testea === app.selectedTeam ? 'is-selected' : ''}">${teamLabel(row.testea)}</td>
-          <td class="${row.feedback1 === app.selectedTeam ? 'is-selected' : ''}">${teamLabel(row.feedback1)}</td>
-          <td class="${row.feedback2 === app.selectedTeam ? 'is-selected' : ''}">${teamLabel(row.feedback2)}</td>
-        </tr>
-      `;
-    }
+    return `
+      <div class="card">
+        <h3>Aula ${escapeHTML(aula)}</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th>Testea</th>
+                ${feedbackHeaders}
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => renderAgendaRow(row, maxFeedbacks)).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+
+function renderAgendaRow(row, maxFeedbacks) {
+  const now = currentTimeSlot();
+  const isNow = now && row.hora === now;
+
+  const feedbackCells = Array.from({ length: maxFeedbacks }, (_, i) => {
+    const id = row.feedbacks[i] || '';
+
+    return `
+      <td class="${id === app.selectedTeam ? 'is-selected' : ''}">
+        ${id ? teamLabel(id) : ''}
+      </td>
+    `;
+  }).join('');
+
+  return `
+    <tr class="${isNow ? 'is-now' : ''}">
+      <td>${escapeHTML(row.hora)}</td>
+      <td class="${row.testea === app.selectedTeam ? 'is-selected' : ''}">
+        ${teamLabel(row.testea)}
+      </td>
+      ${feedbackCells}
+    </tr>
+  `;
+}
 
     function renderMySection() {
       const section = document.getElementById('my-section');
@@ -716,32 +740,31 @@
       document.getElementById('site-footer').textContent = app.config.footer || '';
     }
 
-    function myActions(teamId) {
-      const actions = [];
+function myActions(teamId) {
+  const actions = [];
 
-      app.agenda.forEach(row => {
-        if (row.testea === teamId) {
-          actions.push({
-            hora: row.hora,
-            aula: row.aula,
-            rol: 'Testeás',
-            detalle: 'Tu equipo presenta su producto'
-          });
-        }
-
-        if (row.feedback1 === teamId || row.feedback2 === teamId) {
-          actions.push({
-            hora: row.hora,
-            aula: row.aula,
-            rol: 'Das feedback',
-            detalle: `A ${plainTeamLabel(row.testea)}`
-          });
-        }
+  app.agenda.forEach(row => {
+    if (row.testea === teamId) {
+      actions.push({
+        hora: row.hora,
+        aula: row.aula,
+        rol: 'Testeás',
+        detalle: 'Tu equipo presenta su producto'
       });
-
-      return actions.sort((a, b) => timeToMin(a.hora) - timeToMin(b.hora));
     }
 
+    if (row.feedbacks.includes(teamId)) {
+      actions.push({
+        hora: row.hora,
+        aula: row.aula,
+        rol: 'Das feedback',
+        detalle: `A ${plainTeamLabel(row.testea)}`
+      });
+    }
+  });
+
+  return actions.sort((a, b) => timeToMin(a.hora) - timeToMin(b.hora));
+}
     function currentActionForTeam(teamId) {
       const now = currentTimeSlot();
       if (!now) return null;
@@ -792,13 +815,13 @@
       return h * 60 + m;
     }
 
-    function teamData(id) {
-      return app.teams.get(String(id)) || {
-        id,
-        nombre: `Equipo ${id}`,
-        tematica: ''
-      };
-    }
+function teamData(id) {
+  return app.teams.get(String(id)) || {
+    id,
+    nombre: `Equipo ${id}`,
+    tematica: ''
+  };
+}
 
     function teamName(id) {
       return teamData(id).nombre;
@@ -825,10 +848,10 @@
       `;
     }
 
-    function teamInRow(teamId, row) {
-      if (!teamId) return false;
-      return row.testea === teamId || row.feedback1 === teamId || row.feedback2 === teamId;
-    }
+function teamInRow(teamId, row) {
+  if (!teamId) return false;
+  return row.testea === teamId || row.feedbacks.includes(teamId);
+}
 
     function cell(row, index) {
       return row[index] ? String(row[index]).trim() : '';
