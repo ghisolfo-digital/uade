@@ -915,19 +915,32 @@ menu.addEventListener('click', event => {
 
   const targetId = clickedLink.getAttribute('href').replace('#', '');
 
-  if (targetId === 'mi-equipo' && !app.selectedTeam) {
+  if (targetId === 'mi-equipo') {
     event.preventDefault();
     closeHeaderMenu();
 
-    const selector = document.querySelector('.selector-card');
-    if (selector) {
-      selector.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!app.selectedTeam) {
+      const selector = document.querySelector('.selector-card');
+      if (selector) {
+        selector.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      return;
+    }
+
+    const mySection = document.getElementById('my-section');
+    if (mySection) {
+      scrollToSection(mySection);
     }
 
     return;
   }
 
-  closeHeaderMenu();
+  const target = document.getElementById(targetId);
+  if (target) {
+    event.preventDefault();
+    closeHeaderMenu();
+    scrollToSection(target);
+  }
 });
 
   document.addEventListener('keydown', event => {
@@ -935,6 +948,18 @@ menu.addEventListener('click', event => {
       closeHeaderMenu();
       closeQrLightbox();
     }
+  });
+}
+
+
+function scrollToSection(target) {
+  const header = document.querySelector('.site-header');
+  const headerHeight = header ? header.offsetHeight : 0;
+  const y = target.getBoundingClientRect().top + window.scrollY - headerHeight - 10;
+
+  window.scrollTo({
+    top: y,
+    behavior: 'smooth'
   });
 }
 

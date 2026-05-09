@@ -1070,15 +1070,32 @@ main > section > h2 {
   pointer-events: none;
   transition: transform .22s ease, opacity .22s ease;
 }
+
 .header-menu.is-open {
   transform: translateX(0);
   opacity: 1;
   pointer-events: auto;
 }
+.header-menu-btn .ti-x {
+  display: none;
+}
 
-.header-menu.is-open {
-  display: grid;
-  gap: 4px;
+.header-menu-btn.is-open .ti-menu-2 {
+  display: none;
+}
+
+.header-menu-btn.is-open .ti-x {
+  display: inline-block;
+}
+
+.header-menu-btn.is-open {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 4200;
+  background: #111;
+  color: #fff;
+  border-color: rgba(255,255,255,.3);
 }
 
 .menu-link,
