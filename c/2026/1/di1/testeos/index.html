@@ -135,6 +135,84 @@
       background: var(--green-soft);
     }
 
+.aula-code {
+  text-transform: none;
+}
+
+.eyebrow-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.eyebrow-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: none;
+}
+
+.now-testing-line {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  line-height: 1.15;
+}
+
+.now-testing-label {
+  font-size: .92rem;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.now-testing-team {
+  font-weight: 850;
+}
+
+.feedback-pill-row {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.feedback-emoji,
+.row-emoji {
+  width: 22px;
+  flex: 0 0 22px;
+  text-align: center;
+}
+
+.test-topic {
+  padding-left: 28px;
+}
+
+.feedback-row {
+  align-items: baseline;
+}
+
+.feedback-row .role-label {
+  white-space: nowrap;
+}
+
+.text-item a {
+  color: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.text-item strong {
+  font-weight: 850;
+}
+
+.text-item em {
+  font-style: italic;
+}
+
     .eyebrow {
       font-size: .72rem;
       text-transform: uppercase;
@@ -325,8 +403,8 @@
 
 .block-title {
   background: var(--gray-soft);
-  padding: 8px 10px;
-  font-size: .9rem;
+  padding: 7px 10px;
+  font-size: .88rem;
   line-height: 1.15;
 }
 
@@ -718,7 +796,10 @@ function renderCurrentStatus() {
   if (!nowRows.length) {
     box.innerHTML = `
       <div class="card">
-        <div class="eyebrow">Ahora</div>
+        <div class="eyebrow-row">
+          <div class="eyebrow">Ahora</div>
+          <div class="eyebrow-clock">🕒 ${escapeHTML(currentClockLabel())}</div>
+        </div>
         <div class="big">No hay un bloque activo</div>
         <div class="sub">Puede ser antes del primer turno o después del último.</div>
       </div>
@@ -731,13 +812,26 @@ function renderCurrentStatus() {
 
     return `
       <div class="card status-card ${selectedIsHere ? 'current-for-team' : ''}">
-        <div class="eyebrow">Aula ${escapeHTML(row.aula)} · ${escapeHTML(blockLabel(row))}</div>
-        <div class="big team-label-large">Está testeando ${teamLabel(row.testea, true)}</div>
+        <div class="eyebrow-row">
+          <div class="eyebrow">AULA <span class="aula-code">${escapeHTML(row.aula)}</span> · ${escapeHTML(blockLabel(row))}</div>
+          <div class="eyebrow-clock">🕒 ${escapeHTML(currentClockLabel())}</div>
+        </div>
+
+        <div class="now-testing-line team-label-large">
+          <span aria-hidden="true">📱</span>
+          <span class="now-testing-label">Está testeando</span>
+          <span class="now-testing-team">${teamLabel(row.testea, true)}</span>
+        </div>
+
         <div class="sub">Deberían estar dando feedback:</div>
+
         <div class="feedback-list">
           ${row.feedbacks.map(id => `
             <span class="pill ${isSelectedTeam(id) ? 'selected' : ''}">
-              ${teamLabel(id, false)}
+              <span class="feedback-pill-row">
+                <span class="feedback-emoji" aria-hidden="true">👈</span>
+                <span>${teamLabel(id, false)}</span>
+              </span>
             </span>
           `).join('')}
         </div>
@@ -745,7 +839,6 @@ function renderCurrentStatus() {
     `;
   }).join('');
 }
-
 function renderTables() {
   const box = document.getElementById('tables');
   const aulas = app.aulaOrder.length
@@ -757,7 +850,7 @@ function renderTables() {
 
     return `
       <div class="card">
-        <h3>Aula ${escapeHTML(aula)}</h3>
+        <h3>Aula <span class="aula-code">${escapeHTML(aula)}</span></h3>
         <div class="schedule-list">
           ${rows.map(row => renderScheduleBlock(row)).join('')}
         </div>
@@ -780,7 +873,7 @@ function renderScheduleBlock(row) {
       <div class="block-body">
         <div class="test-row ${isSelectedTeam(row.testea) ? 'is-selected-inline' : ''}">
           <div class="test-main">
-            <span aria-hidden="true">📱</span>
+            <span class="row-emoji" aria-hidden="true">📱</span>
             <span class="role-label">Testea</span>
             <span class="test-team">${escapeHTML(teamNumberAndName(row.testea))}</span>
           </div>
@@ -790,7 +883,7 @@ function renderScheduleBlock(row) {
         <div class="feedback-compact-list">
           ${row.feedbacks.map(id => `
             <div class="feedback-row ${isSelectedTeam(id) ? 'is-selected-inline' : ''}">
-              <span aria-hidden="true">👈</span>
+              <span class="row-emoji" aria-hidden="true">👈</span>
               <span class="role-label">Da feedback</span>
               <span>${teamLabel(id, false)}</span>
             </div>
@@ -800,7 +893,6 @@ function renderScheduleBlock(row) {
     </div>
   `;
 }
-
 
     function renderMySection() {
       const section = document.getElementById('my-section');
@@ -868,19 +960,18 @@ function renderScheduleBlock(row) {
       `;
     }
 
-    function renderTexts() {
-      const box = document.getElementById('texts');
+function renderTexts() {
+  const box = document.getElementById('texts');
 
-      if (!app.texts.length) {
-        box.innerHTML = `<div class="text-item">No hay aclaraciones cargadas.</div>`;
-        return;
-      }
+  if (!app.texts.length) {
+    box.innerHTML = `<div class="text-item">No hay aclaraciones cargadas.</div>`;
+    return;
+  }
 
-      box.innerHTML = app.texts.map(item => `
-        <div class="text-item">${escapeHTML(item.texto)}</div>
-      `).join('');
-    }
-
+  box.innerHTML = app.texts.map(item => `
+    <div class="text-item">${formatText(item.texto)}</div>
+  `).join('');
+}
     function renderFooter() {
       document.getElementById('site-footer').textContent = app.config.footer || '';
     }
@@ -1067,6 +1158,30 @@ function isSelectedTeam(id) {
       return row[index] ? String(row[index]).trim() : '';
     }
 
+    function currentClockLabel() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+function formatText(text) {
+  let html = escapeHTML(text);
+
+  html = html.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener">$1</a>'
+  );
+
+  html = html.replace(
+    /(^|[\s>])(https?:\/\/[^\s<]+)/g,
+    '$1<a href="$2" target="_blank" rel="noopener">$2</a>'
+  );
+
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__([^_]+)__/g, '<em>$1</em>');
+
+  return html;
+}
+
     function escapeHTML(str) {
       return String(str || '')
         .replaceAll('&', '&amp;')
@@ -1075,6 +1190,7 @@ function isSelectedTeam(id) {
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
     }
+    
 
     function parseCSV(text) {
       const rows = [];
