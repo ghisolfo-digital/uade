@@ -486,8 +486,8 @@
 .section-title-clock {
   display: inline-flex;
   align-items: baseline;
-  gap: 4px;
-  margin-left: 8px;
+  gap: .45em;
+  margin-left: .45em;
   font-size: inherit;
   font-weight: inherit;
   color: var(--muted);
@@ -520,6 +520,24 @@ main > section:first-child > h2 {
 .status-card .feedback-list {
   margin-top: 0;
   gap: 6px;
+}
+
+
+.status-card .eyebrow {
+  font-size: 1rem;
+  line-height: 1.15;
+  letter-spacing: 0;
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+
+.status-card .block-hour {
+  font-weight: 800;
+}
+
+.status-card .block-lower {
+  font-weight: 500;
+  text-transform: none;
 }
 
 @media (max-width: 640px) {
