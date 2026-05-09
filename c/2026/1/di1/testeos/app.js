@@ -246,7 +246,7 @@ function renderMyTeamTitle() {
     return;
   }
 
-  title.textContent = `Mi equipo 🧩 ${app.selectedTeam} · ${teamName(app.selectedTeam)}`;
+  title.textContent = `Mi equipo 🧭 ${teamNumber(app.selectedTeam)} · ${teamName(app.selectedTeam)}`;
 }
 
 function renderClockTitle() {
@@ -274,7 +274,7 @@ function renderSelectedTeamBar() {
   }
 
   bar.hidden = false;
-  text.textContent = `${app.selectedTeam} · ${teamName(app.selectedTeam)}`;
+  text.textContent = `${teamNumber(app.selectedTeam)} · ${teamName(app.selectedTeam)}`;
 
   clearButton.onclick = () => {
     app.selectedTeam = '';
@@ -297,7 +297,7 @@ function renderSelectedTeamBar() {
         for (const [id, data] of app.teams.entries()) {
           const opt = document.createElement('option');
           opt.value = id;
-          opt.textContent = `${id} · ${data.nombre}`;
+          opt.textContent = `${teamNumber(id)} · ${data.nombre}`;
           select.appendChild(opt);
         }
       }
@@ -507,26 +507,35 @@ function renderMyNow(nowAction, nextAction) {
 
   if (nowAction) {
     const isFeedback = nowAction.rol === 'Das feedback';
-    const emoji = isFeedback ? '👈' : '📱';
     const rolTexto = isFeedback ? 'Das feedback a' : 'Testeás';
 
     return `
       <div class="eyebrow">Ahora · ${myTeam}</div>
       <div class="big">Aula ${escapeHTML(nowAction.aula)} · ${escapeHTML(rolTexto)}</div>
-      <div class="sub">${escapeHTML(blockLabel(nowAction))} · ${isFeedback ? escapeHTML(nowAction.detalle) : 'Tu equipo y vos ponen a prueba el prototipo'}</div>
+      <div class="sub">
+        ${escapeHTML(blockLabel(nowAction))}
+        ${isFeedback
+          ? ` · <strong>${escapeHTML(nowAction.detalle)}</strong>`
+          : ' · Tu equipo y vos ponen a prueba el prototipo'
+        }
+      </div>
     `;
   }
 
   if (nextAction) {
     const isFeedback = nextAction.rol === 'Das feedback';
-    const emoji = isFeedback ? '👈' : '📱';
     const rolTexto = isFeedback ? 'Das feedback a' : 'Testeás';
 
     return `
       <div class="eyebrow">Ahora tenés break ☕ · ${myTeam}</div>
       <div class="next-block-label">Próximo bloque</div>
-      <div class="big">🕒 ${escapeHTML(blockLabel(nextAction))} · Aula ${escapeHTML(nextAction.aula)}</div>
-      <div class="sub">${emoji} ${escapeHTML(rolTexto)} ${isFeedback ? escapeHTML(nextAction.detalle) : ''}</div>
+      <div class="big">⏭️ ${escapeHTML(blockLabel(nextAction))} · Aula ${escapeHTML(nextAction.aula)}</div>
+      <div class="sub">
+        ${isFeedback
+          ? `👈 ${escapeHTML(rolTexto)} <strong>${escapeHTML(nextAction.detalle)}</strong>`
+          : `📱 ${escapeHTML(rolTexto)}`
+        }
+      </div>
     `;
   }
 
@@ -540,7 +549,6 @@ function renderAction(action) {
   const now = isActionNow(action);
   const isFeedback = action.rol === 'Das feedback';
   const isBreak = action.rol === 'Break';
-  const isTesting = action.rol === 'Testeás';
 
   if (isBreak) {
     return `
@@ -557,7 +565,12 @@ function renderAction(action) {
     <div class="agenda-item ${now ? 'now' : ''}">
       <div class="agenda-main">🕒 ${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>
       <div>${emoji} ${escapeHTML(rolTexto)}</div>
-      <div class="sub">${escapeHTML(action.detalle)}</div>
+      <div class="sub">
+        ${isFeedback
+          ? `<strong>${escapeHTML(action.detalle)}</strong>`
+          : escapeHTML(action.detalle)
+        }
+      </div>
     </div>
   `;
 }
@@ -721,11 +734,15 @@ function teamData(id) {
   };
 }
 
+function teamNumber(id) {
+  if (!id) return '';
+  return String(id).padStart(2, '0');
+}
 
 function teamNumberAndName(id) {
   if (!id) return '';
   const data = teamData(id);
-  return `${id} · ${data.nombre}`;
+  return `${teamNumber(id)} · ${data.nombre}`;
 }
 
 function teamTopic(id) {
@@ -737,26 +754,26 @@ function teamTopic(id) {
       return teamData(id).nombre;
     }
 
-    function plainTeamLabel(id) {
-      const data = teamData(id);
-      return `${id} · ${data.nombre}`;
-    }
+function plainTeamLabel(id) {
+  const data = teamData(id);
+  return `${teamNumber(id)} · ${data.nombre}`;
+}
 
-    function teamLabel(id, showTopic = true) {
-      if (!id) return '';
+function teamLabel(id, showTopic = true) {
+  if (!id) return '';
 
-      const data = teamData(id);
-      const topic = showTopic && data.tematica
-        ? `<span class="team-topic">${escapeHTML(data.tematica)}</span>`
-        : '';
+  const data = teamData(id);
+  const topic = showTopic && data.tematica
+    ? `<span class="team-topic">${escapeHTML(data.tematica)}</span>`
+    : '';
 
-      return `
-        <span class="team-label">
-          <span class="team-main">${escapeHTML(id)} · ${escapeHTML(data.nombre)}</span>
-          ${topic}
-        </span>
-      `;
-    }
+  return `
+    <span class="team-label">
+      <span class="team-main">${escapeHTML(teamNumber(id))} · ${escapeHTML(data.nombre)}</span>
+      ${topic}
+    </span>
+  `;
+}
 
 
 function teamInRow(teamId, row) {

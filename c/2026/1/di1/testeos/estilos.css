@@ -338,6 +338,11 @@ a.button {
   font-size: .93rem;
 }
 
+.sub strong {
+  font-weight: 800;
+  color: inherit;
+}
+
 .status-card .sub {
   margin-top: 11px;
   margin-bottom: 6px;
@@ -975,7 +980,8 @@ main > section > h2 {
   padding: 12px;
 }
 .next-block-label {
-  margin-top: 8px;
+  margin-top: 10px;
+  margin-bottom: 4px;
   color: var(--muted);
   font-size: .82rem;
   font-weight: 700;
