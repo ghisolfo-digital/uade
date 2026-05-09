@@ -306,65 +306,122 @@
       font-size: .9rem;
     }
 
+    .schedule-list {
+  display: grid;
+  gap: 10px;
+}
+
+.schedule-block {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: white;
+}
+
+.schedule-block.is-now {
+  background: var(--yellow-soft);
+  border-color: #d6d200;
+}
+
+.block-title {
+  background: var(--gray-soft);
+  padding: 8px 10px;
+  font-size: .9rem;
+  line-height: 1.15;
+}
+
+.block-title-label {
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.block-title-time {
+  font-weight: 850;
+  color: var(--text);
+}
+
+.block-body {
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.test-row {
+  display: grid;
+  gap: 2px;
+}
+
+.test-main {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  line-height: 1.15;
+}
+
+.role-label {
+  font-size: .76rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.test-team {
+  font-weight: 850;
+  font-size: 1rem;
+}
+
+.test-topic {
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.18;
+  padding-left: 22px;
+}
+
+.feedback-compact-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.feedback-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: .9rem;
+  line-height: 1.2;
+}
+
+.feedback-row .team-main {
+  font-weight: 750;
+}
+
+.schedule-block .is-selected-inline {
+  background: var(--blue-soft);
+  border-radius: 8px;
+  padding: 3px 5px;
+  margin-left: -5px;
+}
 
 @media (max-width: 640px) {
-  .table-wrap {
-    overflow-x: visible;
-    border: 0;
-    background: transparent;
+  .card {
+    padding: 12px;
   }
 
-  table {
-    min-width: 0;
+  section {
+    margin: 14px 0;
   }
 
-  thead {
-    display: none;
+  h2 {
+    font-size: 1.08rem;
+    margin-bottom: 8px;
   }
 
-  tbody {
-    display: grid;
-    gap: 10px;
-  }
-
-  tr {
-    display: block;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: white;
-    overflow: hidden;
-  }
-
-  tr.is-now {
-    background: var(--yellow-soft);
-  }
-
-  td {
-    display: block;
-    border-bottom: 1px solid var(--line);
-    padding: 10px 12px;
-  }
-
-  td:last-child {
-    border-bottom: 0;
-  }
-
-  td::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 4px;
-    font-size: .72rem;
-    line-height: 1;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    font-weight: 800;
-    color: var(--muted);
-  }
-
-  td.is-selected {
-    background: var(--blue-soft);
+  h3 {
+    margin-bottom: 8px;
   }
 }
+
 
 @media (min-width: 760px) {
   .status-grid,
@@ -689,7 +746,6 @@ function renderCurrentStatus() {
   }).join('');
 }
 
-
 function renderTables() {
   const box = document.getElementById('tables');
   const aulas = app.aulaOrder.length
@@ -698,56 +754,50 @@ function renderTables() {
 
   box.innerHTML = aulas.map(aula => {
     const rows = app.agenda.filter(item => item.aula === aula);
-    const maxFeedbacks = Math.max(...rows.map(row => row.feedbacks.length), 0);
-
-    const feedbackHeaders = Array.from({ length: maxFeedbacks }, (_, i) => `
-      <th>Feedback ${i + 1}</th>
-    `).join('');
 
     return `
       <div class="card">
         <h3>Aula ${escapeHTML(aula)}</h3>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Bloque</th>
-                <th>Testea</th>
-                ${feedbackHeaders}
-              </tr>
-            </thead>
-            <tbody>
-              ${rows.map(row => renderAgendaRow(row, maxFeedbacks)).join('')}
-            </tbody>
-          </table>
+        <div class="schedule-list">
+          ${rows.map(row => renderScheduleBlock(row)).join('')}
         </div>
       </div>
     `;
   }).join('');
 }
 
-
-function renderAgendaRow(row, maxFeedbacks) {
+function renderScheduleBlock(row) {
   const isNow = isRowNow(row);
 
-  const feedbackCells = Array.from({ length: maxFeedbacks }, (_, i) => {
-    const id = row.feedbacks[i] || '';
-
-    return `
-      <td data-label="Feedback ${i + 1}" class="${isSelectedTeam(id) ? 'is-selected' : ''}">
-        ${id ? teamLabel(id, false) : ''}
-      </td>
-    `;
-  }).join('');
-
   return `
-    <tr class="${isNow ? 'is-now' : ''}">
-      <td data-label="Bloque">${escapeHTML(blockLabel(row))}</td>
-      <td data-label="Testea" class="${isSelectedTeam(row.testea) ? 'is-selected' : ''}">
-        ${teamLabel(row.testea, true)}
-      </td>
-      ${feedbackCells}
-    </tr>
+    <div class="schedule-block ${isNow ? 'is-now' : ''}">
+      <div class="block-title">
+        <span class="block-title-label">Bloque</span>
+        <span aria-hidden="true">🕒</span>
+        <span class="block-title-time">${escapeHTML(blockLabel(row))}</span>
+      </div>
+
+      <div class="block-body">
+        <div class="test-row ${isSelectedTeam(row.testea) ? 'is-selected-inline' : ''}">
+          <div class="test-main">
+            <span aria-hidden="true">📱</span>
+            <span class="role-label">Testea</span>
+            <span class="test-team">${escapeHTML(teamNumberAndName(row.testea))}</span>
+          </div>
+          ${teamTopic(row.testea) ? `<div class="test-topic">${escapeHTML(teamTopic(row.testea))}</div>` : ''}
+        </div>
+
+        <div class="feedback-compact-list">
+          ${row.feedbacks.map(id => `
+            <div class="feedback-row ${isSelectedTeam(id) ? 'is-selected-inline' : ''}">
+              <span aria-hidden="true">👈</span>
+              <span class="role-label">Da feedback</span>
+              <span>${teamLabel(id, false)}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -964,6 +1014,18 @@ function teamData(id) {
     nombre: `Equipo ${id}`,
     tematica: ''
   };
+}
+
+
+function teamNumberAndName(id) {
+  if (!id) return '';
+  const data = teamData(id);
+  return `${id} · ${data.nombre}`;
+}
+
+function teamTopic(id) {
+  if (!id) return '';
+  return teamData(id).tematica || '';
 }
 
     function teamName(id) {
