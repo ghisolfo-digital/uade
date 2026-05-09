@@ -213,14 +213,13 @@
   font-style: italic;
 }
 
-    .eyebrow {
-      font-size: .72rem;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      font-weight: 800;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
+.eyebrow {
+  font-size: .72rem;
+  letter-spacing: .08em;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
 
     .big {
       font-size: 1.22rem;
@@ -440,7 +439,7 @@
   font-size: .76rem;
   text-transform: uppercase;
   letter-spacing: .04em;
-  font-weight: 800;
+  font-weight: 500;
   color: var(--muted);
 }
 
@@ -453,7 +452,7 @@
   color: var(--muted);
   font-size: .82rem;
   line-height: 1.18;
-  padding-left: 104px;
+  padding-left: calc(22px + 6px + 54px);
 }
 
 .feedback-compact-list {
@@ -471,8 +470,7 @@
 }
 
 .feedback-row .team-main {
-  font-weight: 750;
-}
+
 
 .schedule-block .is-selected-inline {
   background: var(--blue-soft);
@@ -485,17 +483,48 @@
 .section-title-row {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  margin-top: 28px;
 }
 
 .section-title-clock {
-  font-size: .9rem;
-  font-weight: 650;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-left: 8px;
+  font-size: inherit;
+  font-weight: inherit;
   color: var(--muted);
   white-space: nowrap;
 }
 
+
+main > section > h2 {
+  margin-top: 28px;
+}
+
+main > section:first-child > h2 {
+  margin-top: 0;
+}
+
+.block-hour {
+  font-weight: 850;
+}
+
+.block-lower {
+  text-transform: none;
+  font-weight: 500;
+}
+
+.status-card .sub {
+  margin-top: 10px;
+  margin-bottom: 6px;
+}
+
+.status-card .feedback-list {
+  margin-top: 0;
+  gap: 6px;
+}
 
 @media (max-width: 640px) {
   .card {
@@ -551,10 +580,12 @@
     </section>
 
 <section>
-  <h2 class="section-title-row">
-    <span>Qué está pasando ahora</span>
+<h2 class="section-title-row">
+  <span>
+    Qué está pasando ahora
     <span class="section-title-clock">🕒 <span id="current-clock-title">--:--</span> hs.</span>
-  </h2>
+  </span>
+</h2>
   <div id="current-status" class="status-grid"></div>
 </section>
 
@@ -834,7 +865,7 @@ function renderCurrentStatus() {
 
     return `
       <div class="card status-card ${selectedIsHere ? 'current-for-team' : ''}">
-<div class="eyebrow">AULA <span class="aula-code">${escapeHTML(row.aula)}</span> · ${escapeHTML(blockLabel(row))}</div>
+<div class="eyebrow">Aula <span class="aula-code">${escapeHTML(row.aula)}</span> · ${blockLabelHTML(row)}</div>
 
         <div class="now-testing-line team-label-large">
           <span aria-hidden="true">📱</span>
@@ -886,7 +917,7 @@ function renderScheduleBlock(row) {
       <div class="block-title">
         <span class="block-title-label">Bloque</span>
         <span aria-hidden="true">🕒</span>
-        <span class="block-title-time">${escapeHTML(blockLabel(row))}</span>
+        <span class="block-title-time">${blockLabelHTML(row)}</span>
       </div>
 
       <div class="block-body">
@@ -1072,6 +1103,15 @@ function myActions(teamId) {
 
 function blockLabel(item) {
   return `${item.horaInicio} a ${item.horaCierre} hs.`;
+}
+
+function blockLabelHTML(item) {
+  return `
+    <span class="block-hour">${escapeHTML(item.horaInicio)}</span>
+    <span class="block-lower">a</span>
+    <span class="block-hour">${escapeHTML(item.horaCierre)}</span>
+    <span class="block-lower">hs.</span>
+  `;
 }
 
     function uniqueBlocks(agenda) {
