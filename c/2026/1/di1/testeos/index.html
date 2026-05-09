@@ -306,6 +306,66 @@
       font-size: .9rem;
     }
 
+
+@media (max-width: 640px) {
+  .table-wrap {
+    overflow-x: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  table {
+    min-width: 0;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  tr {
+    display: block;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: white;
+    overflow: hidden;
+  }
+
+  tr.is-now {
+    background: var(--yellow-soft);
+  }
+
+  td {
+    display: block;
+    border-bottom: 1px solid var(--line);
+    padding: 10px 12px;
+  }
+
+  td:last-child {
+    border-bottom: 0;
+  }
+
+  td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    font-size: .72rem;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-weight: 800;
+    color: var(--muted);
+  }
+
+  td.is-selected {
+    background: var(--blue-soft);
+  }
+}
+
 @media (min-width: 760px) {
   .status-grid,
   .tables {
@@ -386,7 +446,8 @@
       texts: [],
       links: {},
       selectedTeam: null,
-      allTimes: []
+      allTimes: [],
+      aulaOrder: []
     };
 
     init();
@@ -451,6 +512,10 @@ if (tipo === 'agenda') {
     .map(value => String(value || '').trim())
     .filter(value => value !== '');
 
+  if (b && !app.aulaOrder.includes(b)) {
+    app.aulaOrder.push(b);
+  }
+
   app.agenda.push({
     hora: a,
     aula: b,
@@ -474,7 +539,12 @@ if (tipo === 'agenda') {
         }
       });
 
-      app.agenda.sort((x, y) => timeToMin(x.hora) - timeToMin(y.hora) || x.aula.localeCompare(y.aula));
+      app.agenda.sort((x, y) => {
+        const byTime = timeToMin(x.hora) - timeToMin(y.hora);
+        if (byTime !== 0) return byTime;
+
+        return app.aulaOrder.indexOf(x.aula) - app.aulaOrder.indexOf(y.aula);
+      });
       app.texts.sort((x, y) => x.orden - y.orden);
       app.allTimes = [...new Set(app.agenda.map(item => item.hora))].sort((a, b) => timeToMin(a) - timeToMin(b));
     }
@@ -590,12 +660,12 @@ function renderCurrentStatus() {
     return `
       <div class="card status-card ${selectedIsHere ? 'current-for-team' : ''}">
         <div class="eyebrow">Aula ${escapeHTML(row.aula)} · ${escapeHTML(row.hora)}</div>
-        <div class="big team-label-large">Está testeando ${teamLabel(row.testea)}</div>
+        <div class="big team-label-large">Está testeando ${teamLabel(row.testea, true)}</div>
         <div class="sub">Deberían estar dando feedback:</div>
         <div class="feedback-list">
           ${row.feedbacks.map(id => `
-            <span class="pill ${id === app.selectedTeam ? 'selected' : ''}">
-              ${teamLabel(id)}
+            <span class="pill ${isSelectedTeam(id) ? 'selected' : ''}">
+              ${teamLabel(id, false)}
             </span>
           `).join('')}
         </div>
@@ -607,7 +677,9 @@ function renderCurrentStatus() {
 
 function renderTables() {
   const box = document.getElementById('tables');
-  const aulas = [...new Set(app.agenda.map(x => x.aula))].sort();
+  const aulas = app.aulaOrder.length
+    ? app.aulaOrder
+    : [...new Set(app.agenda.map(x => x.aula).filter(Boolean))];
 
   box.innerHTML = aulas.map(aula => {
     const rows = app.agenda.filter(item => item.aula === aula);
@@ -648,22 +720,23 @@ function renderAgendaRow(row, maxFeedbacks) {
     const id = row.feedbacks[i] || '';
 
     return `
-      <td class="${id === app.selectedTeam ? 'is-selected' : ''}">
-        ${id ? teamLabel(id) : ''}
+      <td data-label="Feedback ${i + 1}" class="${isSelectedTeam(id) ? 'is-selected' : ''}">
+        ${id ? teamLabel(id, false) : ''}
       </td>
     `;
   }).join('');
 
   return `
     <tr class="${isNow ? 'is-now' : ''}">
-      <td>${escapeHTML(row.hora)}</td>
-      <td class="${row.testea === app.selectedTeam ? 'is-selected' : ''}">
-        ${teamLabel(row.testea)}
+      <td data-label="Hora">${escapeHTML(row.hora)}</td>
+      <td data-label="Testea" class="${isSelectedTeam(row.testea) ? 'is-selected' : ''}">
+        ${teamLabel(row.testea, true)}
       </td>
       ${feedbackCells}
     </tr>
   `;
 }
+
 
     function renderMySection() {
       const section = document.getElementById('my-section');
@@ -779,8 +852,12 @@ function myActions(teamId) {
     function currentRows() {
       const slot = currentTimeSlot();
       if (!slot) return [];
-      return app.agenda.filter(row => row.hora === slot);
+
+      return app.agenda
+        .filter(row => row.hora === slot)
+        .sort((a, b) => app.aulaOrder.indexOf(a.aula) - app.aulaOrder.indexOf(b.aula));
     }
+
 
     function currentTimeSlot() {
       if (!app.allTimes.length) return null;
@@ -832,11 +909,11 @@ function teamData(id) {
       return `${id} · ${data.nombre}`;
     }
 
-    function teamLabel(id) {
+    function teamLabel(id, showTopic = true) {
       if (!id) return '';
 
       const data = teamData(id);
-      const topic = data.tematica
+      const topic = showTopic && data.tematica
         ? `<span class="team-topic">${escapeHTML(data.tematica)}</span>`
         : '';
 
@@ -848,9 +925,14 @@ function teamData(id) {
       `;
     }
 
+
 function teamInRow(teamId, row) {
   if (!teamId) return false;
   return row.testea === teamId || row.feedbacks.includes(teamId);
+}
+
+function isSelectedTeam(id) {
+  return Boolean(app.selectedTeam && id && id === app.selectedTeam);
 }
 
     function cell(row, index) {
