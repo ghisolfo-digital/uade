@@ -1,6 +1,6 @@
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQb2Ggbd5Y1VOwTbAI7CjvaHNDwyYs5Y5IuJQCtR2G1eF7pN_bECM4_EQKMPvmwUredXZ2vMmZ43uiu/pub?gid=331164853&single=true&output=csv';
 const QR_IMAGE_URL = 'https://drive.google.com/uc?export=view&id=REEMPLAZAR_ID_DE_GOOGLE_DRIVE';
-
+const QR_PUBLIC_URL = QR_IMAGE_URL;
 
 const BACKUP_CSV_URL = './data-backup.csv';
 const CSV_REFRESH_MS = 120000;
@@ -331,8 +331,8 @@ function renderSelectedTeamBar() {
       };
     }
 
-    function renderLinks() {
-      setLink('feedback-link', app.links.feedback, 'Hacer feedback');
+function renderLinks() {
+  setLink('feedback-link', app.links.feedback, 'Form de feedback a otro equipo');
       
 
       document.getElementById('share-button').onclick = async () => {
@@ -356,20 +356,26 @@ url.searchParams.delete('t');
       };
     }
 
-    function setLink(id, data, fallbackLabel) {
-      const el = document.getElementById(id);
-      el.textContent = data?.label || fallbackLabel;
+function setLink(id, data, fallbackLabel) {
+  const el = document.getElementById(id);
+  if (!el) return;
 
-      if (data?.url) {
-        el.href = data.url;
-        el.style.opacity = '1';
-        el.style.pointerEvents = 'auto';
-      } else {
-        el.href = '#';
-        el.style.opacity = '.45';
-        el.style.pointerEvents = 'none';
-      }
-    }
+  const fixedLabels = {
+    'feedback-link': 'Form de feedback a otro equipo'
+  };
+
+  el.textContent = fixedLabels[id] || data?.label || fallbackLabel;
+
+  if (data?.url) {
+    el.href = data.url;
+    el.style.opacity = '1';
+    el.style.pointerEvents = 'auto';
+  } else {
+    el.href = '#';
+    el.style.opacity = '.45';
+    el.style.pointerEvents = 'none';
+  }
+}
 
 function renderCurrentStatus() {
   const box = document.getElementById('current-status');
@@ -981,10 +987,15 @@ function setupQrLightbox() {
   const button = document.getElementById('qr-button');
   const lightbox = document.getElementById('qr-lightbox');
   const image = document.getElementById('qr-image');
-
+const qrUrl = document.getElementById('qr-url');
   if (!button || !lightbox || !image) return;
 
-  image.src = QR_IMAGE_URL;
+image.src = QR_IMAGE_URL;
+
+if (qrUrl) {
+  qrUrl.href = QR_PUBLIC_URL;
+  qrUrl.textContent = QR_PUBLIC_URL;
+}
 
   button.addEventListener('click', () => {
     closeHeaderMenu();
