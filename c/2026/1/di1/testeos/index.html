@@ -446,7 +446,7 @@
       texts: [],
       links: {},
       selectedTeam: null,
-      allTimes: [],
+      allBlocks: [],
       aulaOrder: []
     };
 
@@ -507,19 +507,31 @@
         }
 
 if (tipo === 'agenda') {
+  // Formato nuevo recomendado:
+  // agenda | data | hora_inicio | hora_cierre | aula | testea | feedback_1 | feedback_2 | ...
+  // También mantiene compatibilidad con el formato anterior:
+  // agenda | data | hora | aula | testea | feedback_1 | feedback_2 | ...
+  const usaFormatoNuevo = isTimeLike(b);
+
+  const horaInicio = a;
+  const horaCierre = usaFormatoNuevo ? b : '';
+  const aula = usaFormatoNuevo ? c : b;
+  const testea = usaFormatoNuevo ? d : c;
+
   const feedbacks = row
-    .slice(5)
+    .slice(usaFormatoNuevo ? 6 : 5)
     .map(value => String(value || '').trim())
     .filter(value => value !== '');
 
-  if (b && !app.aulaOrder.includes(b)) {
-    app.aulaOrder.push(b);
+  if (aula && !app.aulaOrder.includes(aula)) {
+    app.aulaOrder.push(aula);
   }
 
   app.agenda.push({
-    hora: a,
-    aula: b,
-    testea: c,
+    horaInicio,
+    horaCierre,
+    aula,
+    testea,
     feedbacks
   });
 }
@@ -539,14 +551,17 @@ if (tipo === 'agenda') {
         }
       });
 
+      inferMissingEndTimes();
+
       app.agenda.sort((x, y) => {
-        const byTime = timeToMin(x.hora) - timeToMin(y.hora);
+        const byTime = timeToMin(x.horaInicio) - timeToMin(y.horaInicio);
         if (byTime !== 0) return byTime;
 
         return app.aulaOrder.indexOf(x.aula) - app.aulaOrder.indexOf(y.aula);
       });
+
       app.texts.sort((x, y) => x.orden - y.orden);
-      app.allTimes = [...new Set(app.agenda.map(item => item.hora))].sort((a, b) => timeToMin(a) - timeToMin(b));
+      app.allBlocks = uniqueBlocks(app.agenda);
     }
 
     function renderAll() {
@@ -659,7 +674,7 @@ function renderCurrentStatus() {
 
     return `
       <div class="card status-card ${selectedIsHere ? 'current-for-team' : ''}">
-        <div class="eyebrow">Aula ${escapeHTML(row.aula)} · ${escapeHTML(row.hora)}</div>
+        <div class="eyebrow">Aula ${escapeHTML(row.aula)} · ${escapeHTML(blockLabel(row))}</div>
         <div class="big team-label-large">Está testeando ${teamLabel(row.testea, true)}</div>
         <div class="sub">Deberían estar dando feedback:</div>
         <div class="feedback-list">
@@ -696,7 +711,7 @@ function renderTables() {
           <table>
             <thead>
               <tr>
-                <th>Hora</th>
+                <th>Bloque</th>
                 <th>Testea</th>
                 ${feedbackHeaders}
               </tr>
@@ -713,8 +728,7 @@ function renderTables() {
 
 
 function renderAgendaRow(row, maxFeedbacks) {
-  const now = currentTimeSlot();
-  const isNow = now && row.hora === now;
+  const isNow = isRowNow(row);
 
   const feedbackCells = Array.from({ length: maxFeedbacks }, (_, i) => {
     const id = row.feedbacks[i] || '';
@@ -728,7 +742,7 @@ function renderAgendaRow(row, maxFeedbacks) {
 
   return `
     <tr class="${isNow ? 'is-now' : ''}">
-      <td data-label="Hora">${escapeHTML(row.hora)}</td>
+      <td data-label="Bloque">${escapeHTML(blockLabel(row))}</td>
       <td data-label="Testea" class="${isSelectedTeam(row.testea) ? 'is-selected' : ''}">
         ${teamLabel(row.testea, true)}
       </td>
@@ -755,8 +769,16 @@ function renderAgendaRow(row, maxFeedbacks) {
       document.getElementById('my-now').innerHTML = renderMyNow(nowAction, nextAction);
       document.getElementById('my-agenda').innerHTML = actions.map(action => renderAction(action)).join('');
 
-      const breakTimes = app.allTimes.filter(hora => !actions.some(action => action.hora === hora));
-      document.getElementById('my-breaks').innerHTML = breakTimes.map(hora => `<span class="break-pill">${escapeHTML(hora)}</span>`).join('');
+      const breakBlocks = app.allBlocks.filter(block => {
+        return !actions.some(action =>
+          action.horaInicio === block.horaInicio &&
+          action.horaCierre === block.horaCierre
+        );
+      });
+
+      document.getElementById('my-breaks').innerHTML = breakBlocks
+        .map(block => `<span class="break-pill">${escapeHTML(blockLabel(block))}</span>`)
+        .join('');
     }
 
     function renderMyNow(nowAction, nextAction) {
@@ -766,14 +788,14 @@ function renderAgendaRow(row, maxFeedbacks) {
         return `
           <div class="eyebrow">Ahora · ${myTeam}</div>
           <div class="big">Aula ${escapeHTML(nowAction.aula)} · ${escapeHTML(nowAction.rol)}</div>
-          <div class="sub">${escapeHTML(nowAction.detalle)}</div>
+          <div class="sub">${escapeHTML(blockLabel(nowAction))} · ${escapeHTML(nowAction.detalle)}</div>
         `;
       }
 
       if (nextAction) {
         return `
           <div class="eyebrow">Ahora tenés break · ${myTeam}</div>
-          <div class="big">Próximo bloque: ${escapeHTML(nextAction.hora)} · Aula ${escapeHTML(nextAction.aula)}</div>
+          <div class="big">Próximo bloque: ${escapeHTML(blockLabel(nextAction))} · Aula ${escapeHTML(nextAction.aula)}</div>
           <div class="sub">${escapeHTML(nextAction.rol)} · ${escapeHTML(nextAction.detalle)}</div>
         `;
       }
@@ -785,11 +807,11 @@ function renderAgendaRow(row, maxFeedbacks) {
     }
 
     function renderAction(action) {
-      const now = currentTimeSlot();
+      const now = isActionNow(action);
 
       return `
-        <div class="agenda-item ${action.hora === now ? 'now' : ''}">
-          <div class="agenda-main">${escapeHTML(action.hora)} · Aula ${escapeHTML(action.aula)}</div>
+        <div class="agenda-item ${now ? 'now' : ''}">
+          <div class="agenda-main">${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>
           <div>${escapeHTML(action.rol)}</div>
           <div class="sub">${escapeHTML(action.detalle)}</div>
         </div>
@@ -819,7 +841,8 @@ function myActions(teamId) {
   app.agenda.forEach(row => {
     if (row.testea === teamId) {
       actions.push({
-        hora: row.hora,
+        horaInicio: row.horaInicio,
+        horaCierre: row.horaCierre,
         aula: row.aula,
         rol: 'Testeás',
         detalle: 'Tu equipo presenta su producto'
@@ -828,7 +851,8 @@ function myActions(teamId) {
 
     if (row.feedbacks.includes(teamId)) {
       actions.push({
-        hora: row.hora,
+        horaInicio: row.horaInicio,
+        horaCierre: row.horaCierre,
         aula: row.aula,
         rol: 'Das feedback',
         detalle: `A ${plainTeamLabel(row.testea)}`
@@ -836,44 +860,34 @@ function myActions(teamId) {
     }
   });
 
-  return actions.sort((a, b) => timeToMin(a.hora) - timeToMin(b.hora));
+  return actions.sort((a, b) => timeToMin(a.horaInicio) - timeToMin(b.horaInicio));
 }
     function currentActionForTeam(teamId) {
-      const now = currentTimeSlot();
-      if (!now) return null;
-      return myActions(teamId).find(action => action.hora === now) || null;
+      return myActions(teamId).find(action => isActionNow(action)) || null;
     }
 
     function nextActionForTeam(teamId) {
       const nowMin = currentMinutes();
-      return myActions(teamId).find(action => timeToMin(action.hora) > nowMin) || null;
+
+      return myActions(teamId).find(action =>
+        timeToMin(action.horaInicio) > nowMin
+      ) || null;
     }
 
     function currentRows() {
-      const slot = currentTimeSlot();
-      if (!slot) return [];
-
       return app.agenda
-        .filter(row => row.hora === slot)
+        .filter(row => isRowNow(row))
         .sort((a, b) => app.aulaOrder.indexOf(a.aula) - app.aulaOrder.indexOf(b.aula));
     }
 
-
-    function currentTimeSlot() {
-      if (!app.allTimes.length) return null;
-
+    function isRowNow(row) {
       const now = currentMinutes();
+      return now >= timeToMin(row.horaInicio) && now < timeToMin(row.horaCierre);
+    }
 
-      for (let i = 0; i < app.allTimes.length; i++) {
-        const start = timeToMin(app.allTimes[i]);
-        const next = app.allTimes[i + 1] ? timeToMin(app.allTimes[i + 1]) : start + 35;
-
-        if (now >= start && now < next) {
-          return app.allTimes[i];
-        }
-      }
-
-      return null;
+    function isActionNow(action) {
+      const now = currentMinutes();
+      return now >= timeToMin(action.horaInicio) && now < timeToMin(action.horaCierre);
     }
 
     function currentMinutes() {
@@ -888,8 +902,60 @@ function myActions(teamId) {
     }
 
     function timeToMin(time) {
-      const [h, m] = String(time).split(':').map(Number);
+      const [h, m] = String(time || '0:00').split(':').map(Number);
       return h * 60 + m;
+    }
+
+    function isTimeLike(value) {
+      return /^\d{1,2}:\d{2}$/.test(String(value || '').trim());
+    }
+
+    function blockLabel(item) {
+      return `${item.horaInicio} a ${item.horaCierre}`;
+    }
+
+    function uniqueBlocks(agenda) {
+      const blocks = [];
+
+      agenda.forEach(row => {
+        const exists = blocks.some(block =>
+          block.horaInicio === row.horaInicio &&
+          block.horaCierre === row.horaCierre
+        );
+
+        if (!exists) {
+          blocks.push({
+            horaInicio: row.horaInicio,
+            horaCierre: row.horaCierre
+          });
+        }
+      });
+
+      return blocks.sort((a, b) => timeToMin(a.horaInicio) - timeToMin(b.horaInicio));
+    }
+
+    function inferMissingEndTimes() {
+      const starts = [...new Set(app.agenda.map(row => row.horaInicio))]
+        .sort((a, b) => timeToMin(a) - timeToMin(b));
+
+      app.agenda.forEach(row => {
+        if (row.horaCierre) return;
+
+        const currentIndex = starts.indexOf(row.horaInicio);
+        const nextStart = starts[currentIndex + 1];
+
+        if (nextStart) {
+          row.horaCierre = nextStart;
+        } else {
+          row.horaCierre = minToTime(timeToMin(row.horaInicio) + 35);
+        }
+      });
+    }
+
+    function minToTime(totalMinutes) {
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     }
 
 function teamData(id) {
