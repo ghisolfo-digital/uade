@@ -638,6 +638,12 @@ main > section:first-child > h2 {
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQb2Ggbd5Y1VOwTbAI7CjvaHNDwyYs5Y5IuJQCtR2G1eF7pN_bECM4_EQKMPvmwUredXZ2vMmZ43uiu/pub?gid=331164853&single=true&output=csv';
 
+const BACKUP_CSV_URL = './data-backup.csv';
+const CSV_REFRESH_MS = 120000;
+const CSV_REFRESH_JITTER_MS = 30000;
+const CSV_FIRST_LIVE_JITTER_MS = 25000;
+const LOCAL_CACHE_KEY = 'testeosUX_csv_cache_v1';
+
     const app = {
       config: {},
       teams: new Map(),
@@ -651,26 +657,118 @@ main > section:first-child > h2 {
 
     init();
 
-    async function init() {
-      const params = new URLSearchParams(window.location.search);
-      app.selectedTeam = params.get('e') || '';
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  app.selectedTeam = params.get('e') || '';
 
-      try {
-        const csvText = await fetchCsv();
-        const rows = parseCSV(csvText);
-        parseData(rows);
-        renderAll();
-        setInterval(renderAll, 30000);
-      } catch (err) {
-        document.querySelector('main').innerHTML = `
-          <section class="notice">
-            No se pudo cargar el CSV. Revisá que el link esté publicado y que esté pegado correctamente en CSV_URL.
-          </section>
-        `;
-        console.error(err);
-      }
-    }
+  try {
+    const initialCsv = await loadInitialCsv();
+    applyCsvText(initialCsv);
+    renderAll();
 
+    setInterval(renderAll, 30000);
+
+    setTimeout(() => {
+      refreshDataFromCsv();
+      scheduleCsvRefresh();
+    }, randomBetween(3000, CSV_FIRST_LIVE_JITTER_MS));
+
+  } catch (err) {
+    document.querySelector('main').innerHTML = `
+      <section class="notice">
+        No se pudo cargar ni el CSV de Google Sheets ni el backup local. Revisá que el CSV esté publicado y que exista data-backup.csv.
+      </section>
+    `;
+    console.error(err);
+  }
+}
+
+
+async function loadInitialCsv() {
+  const cached = getCachedCsv();
+
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    return await fetchBackupCsv();
+  } catch (backupErr) {
+    console.warn('No se pudo cargar backup local, intento Google Sheets', backupErr);
+    return await fetchCsv();
+  }
+}
+
+function applyCsvText(csvText) {
+  resetData();
+  const rows = parseCSV(csvText);
+  parseData(rows);
+}
+
+function resetData() {
+  app.config = {};
+  app.teams = new Map();
+  app.agenda = [];
+  app.texts = [];
+  app.links = {};
+  app.allBlocks = [];
+  app.aulaOrder = [];
+}
+
+async function refreshDataFromCsv() {
+  try {
+    const csvText = await fetchCsv();
+    saveCachedCsv(csvText);
+    applyCsvText(csvText);
+    renderAll();
+  } catch (err) {
+    console.warn('No se pudo actualizar desde Google Sheets. Se mantiene la data actual.', err);
+  }
+}
+
+function scheduleCsvRefresh() {
+  const delay = CSV_REFRESH_MS + randomBetween(0, CSV_REFRESH_JITTER_MS);
+
+  setTimeout(async () => {
+    await refreshDataFromCsv();
+    scheduleCsvRefresh();
+  }, delay);
+}
+
+async function fetchBackupCsv() {
+  const res = await fetch(BACKUP_CSV_URL + '?cache=' + Date.now());
+  if (!res.ok) throw new Error('Error cargando backup CSV');
+  return await res.text();
+}
+
+function saveCachedCsv(csvText) {
+  try {
+    localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({
+      timestamp: Date.now(),
+      csvText
+    }));
+  } catch (err) {
+    console.warn('No se pudo guardar caché local', err);
+  }
+}
+
+function getCachedCsv() {
+  try {
+    const raw = localStorage.getItem(LOCAL_CACHE_KEY);
+    if (!raw) return null;
+
+    const data = JSON.parse(raw);
+    if (!data.csvText) return null;
+
+    return data.csvText;
+  } catch (err) {
+    return null;
+  }
+}
+
+function randomBetween(min, max) {
+  return Math.floor(min + Math.random() * (max - min));
+}
     async function fetchCsv() {
       const url = CSV_URL + (CSV_URL.includes('?') ? '&' : '?') + 'cache=' + Date.now();
       const res = await fetch(url);
