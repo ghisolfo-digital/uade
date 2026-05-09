@@ -899,13 +899,13 @@ td.is-selected {
 }
 
 .status-card .pill.selected {
-  background: var(--selected-team);
-  color: #141800;
+  background: var(--selected-team) !important;
+  color: #141800 !important;
   outline: 1px solid var(--selected-team-border);
 }
 
 .status-card .pill.selected .team-main {
-  color: #141800;
+  color: #141800 !important;
   font-weight: 800;
 }
 
@@ -974,6 +974,15 @@ main > section > h2 {
 .tables > .card .schedule-list {
   padding: 12px;
 }
+.next-block-label {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
 
 @media (max-width: 640px) {
   .header-actions {

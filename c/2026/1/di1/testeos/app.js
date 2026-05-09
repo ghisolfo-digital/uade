@@ -493,7 +493,7 @@ function renderMySection() {
       horaCierre: block.horaCierre,
       aula: '',
       rol: 'Break',
-      detalle: 'Descanso'
+      detalle: ''
     };
   });
 
@@ -502,49 +502,62 @@ function renderMySection() {
     .join('');
 }
 
-    function renderMyNow(nowAction, nextAction) {
-      const myTeam = teamLabel(app.selectedTeam);
+function renderMyNow(nowAction, nextAction) {
+  const myTeam = teamLabel(app.selectedTeam, false);
 
-      if (nowAction) {
-        return `
-          <div class="eyebrow">Ahora · ${myTeam}</div>
-          <div class="big">Aula ${escapeHTML(nowAction.aula)} · ${escapeHTML(nowAction.rol)}</div>
-          <div class="sub">${escapeHTML(blockLabel(nowAction))} · ${escapeHTML(nowAction.detalle)}</div>
-        `;
-      }
+  if (nowAction) {
+    const isFeedback = nowAction.rol === 'Das feedback';
+    const emoji = isFeedback ? '👈' : '📱';
+    const rolTexto = isFeedback ? 'Das feedback a' : 'Testeás';
 
-      if (nextAction) {
-        return `
-          <div class="eyebrow">Ahora tenés break · ${myTeam}</div>
-          <div class="big">Próximo bloque: ${escapeHTML(blockLabel(nextAction))} · Aula ${escapeHTML(nextAction.aula)}</div>
-          <div class="sub">${escapeHTML(nextAction.rol)} · ${escapeHTML(nextAction.detalle)}</div>
-        `;
-      }
+    return `
+      <div class="eyebrow">Ahora · ${myTeam}</div>
+      <div class="big">Aula ${escapeHTML(nowAction.aula)} · ${escapeHTML(rolTexto)}</div>
+      <div class="sub">${escapeHTML(blockLabel(nowAction))} · ${isFeedback ? escapeHTML(nowAction.detalle) : 'Tu equipo y vos ponen a prueba el prototipo'}</div>
+    `;
+  }
 
-      return `
-        <div class="eyebrow">${myTeam}</div>
-        <div class="big">Ya no tenés más bloques pendientes</div>
-      `;
-    }
+  if (nextAction) {
+    const isFeedback = nextAction.rol === 'Das feedback';
+    const emoji = isFeedback ? '👈' : '📱';
+    const rolTexto = isFeedback ? 'Das feedback a' : 'Testeás';
+
+    return `
+      <div class="eyebrow">Ahora tenés break ☕ · ${myTeam}</div>
+      <div class="next-block-label">Próximo bloque</div>
+      <div class="big">🕒 ${escapeHTML(blockLabel(nextAction))} · Aula ${escapeHTML(nextAction.aula)}</div>
+      <div class="sub">${emoji} ${escapeHTML(rolTexto)} ${isFeedback ? escapeHTML(nextAction.detalle) : ''}</div>
+    `;
+  }
+
+  return `
+    <div class="eyebrow">${myTeam}</div>
+    <div class="big">Ya no tenés más bloques pendientes</div>
+  `;
+}
 
 function renderAction(action) {
   const now = isActionNow(action);
   const isFeedback = action.rol === 'Das feedback';
   const isBreak = action.rol === 'Break';
+  const isTesting = action.rol === 'Testeás';
 
-  const emoji = isBreak ? '☕' : (isFeedback ? '👈' : '📱');
-  const lugar = isBreak ? 'Break' : `Aula ${escapeHTML(action.aula)}`;
-  const rolTexto = isFeedback ? 'Das feedback a' : action.rol;
+  if (isBreak) {
+    return `
+      <div class="agenda-item ${now ? 'now' : ''} is-break">
+        <div class="agenda-main">☕ ${escapeHTML(blockLabel(action))} · Break</div>
+      </div>
+    `;
+  }
+
+  const emoji = isFeedback ? '👈' : '📱';
+  const rolTexto = isFeedback ? 'Das feedback a' : 'Testeás';
 
   return `
-    <div class="agenda-item ${now ? 'now' : ''} ${isBreak ? 'is-break' : ''}">
-      <div class="agenda-main">${emoji} 🕒 ${escapeHTML(blockLabel(action))} · ${lugar}</div>
-      ${isBreak ? `
-        <div class="sub">Descanso</div>
-      ` : `
-        <div>${emoji} ${escapeHTML(rolTexto)}</div>
-        <div class="sub">${escapeHTML(action.detalle)}</div>
-      `}
+    <div class="agenda-item ${now ? 'now' : ''}">
+      <div class="agenda-main">🕒 ${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>
+      <div>${emoji} ${escapeHTML(rolTexto)}</div>
+      <div class="sub">${escapeHTML(action.detalle)}</div>
     </div>
   `;
 }
@@ -578,7 +591,7 @@ function myActions(teamId) {
         horaCierre: row.horaCierre,
         aula: row.aula,
         rol: 'Testeás',
-        detalle: 'Tu equipo presenta su producto'
+        detalle: 'Tu equipo y vos ponen a prueba el prototipo'
       });
     }
 
