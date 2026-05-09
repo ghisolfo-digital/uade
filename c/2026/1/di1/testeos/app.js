@@ -1,4 +1,6 @@
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQb2Ggbd5Y1VOwTbAI7CjvaHNDwyYs5Y5IuJQCtR2G1eF7pN_bECM4_EQKMPvmwUredXZ2vMmZ43uiu/pub?gid=331164853&single=true&output=csv';
+const QR_IMAGE_URL = 'https://drive.google.com/uc?export=view&id=REEMPLAZAR_ID_DE_GOOGLE_DRIVE';
+
 
 const BACKUP_CSV_URL = './data-backup.csv';
 const CSV_REFRESH_MS = 120000;
@@ -25,10 +27,14 @@ async function init() {
 
   try {
     const initialCsv = await loadInitialCsv();
-    applyCsvText(initialCsv);
-    renderAll();
+applyCsvText(initialCsv);
+renderAll();
 
-    setInterval(renderAll, 30000);
+setupHeaderMenu();
+setupQrLightbox();
+setupSectionSpy();
+
+setInterval(renderAll, 30000);
 
     setTimeout(() => {
       refreshDataFromCsv();
@@ -465,7 +471,7 @@ function renderScheduleBlock(row) {
 }
 
 function renderMySection() {
-  const section = document.getElementById('my-section');
+  const section = document.getElementById('mi-equipo');
 
   if (!app.selectedTeam) {
     section.style.display = 'none';
@@ -879,3 +885,113 @@ function formatText(text) {
 
       return rows.filter(r => r.some(c => String(c).trim() !== ''));
     }
+
+    function setupHeaderMenu() {
+  const button = document.getElementById('menu-button');
+  const menu = document.getElementById('header-menu');
+
+  if (!button || !menu) return;
+
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    const isOpen = menu.classList.toggle('is-open');
+    button.classList.toggle('is-open', isOpen);
+    button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  });
+
+  menu.addEventListener('click', event => {
+    const clickedLink = event.target.closest('a[href^="#"]');
+    if (!clickedLink) return;
+
+    closeHeaderMenu();
+  });
+
+  document.addEventListener('click', event => {
+    if (!menu.classList.contains('is-open')) return;
+    if (menu.contains(event.target) || button.contains(event.target)) return;
+    closeHeaderMenu();
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      closeHeaderMenu();
+      closeQrLightbox();
+    }
+  });
+}
+
+function closeHeaderMenu() {
+  const button = document.getElementById('menu-button');
+  const menu = document.getElementById('header-menu');
+
+  if (!button || !menu) return;
+
+  menu.classList.remove('is-open');
+  button.classList.remove('is-open');
+  button.setAttribute('aria-expanded', 'false');
+}
+
+function setupQrLightbox() {
+  const button = document.getElementById('qr-button');
+  const lightbox = document.getElementById('qr-lightbox');
+  const image = document.getElementById('qr-image');
+
+  if (!button || !lightbox || !image) return;
+
+  image.src = QR_IMAGE_URL;
+
+  button.addEventListener('click', () => {
+    closeHeaderMenu();
+    lightbox.hidden = false;
+  });
+
+  lightbox.querySelectorAll('[data-close-qr]').forEach(el => {
+    el.addEventListener('click', closeQrLightbox);
+  });
+
+  image.addEventListener('error', () => {
+    image.alt = 'No se pudo cargar el QR. Revisá el enlace de Google Drive.';
+  });
+}
+
+function closeQrLightbox() {
+  const lightbox = document.getElementById('qr-lightbox');
+  if (lightbox) lightbox.hidden = true;
+}
+
+function setupSectionSpy() {
+  const links = Array.from(document.querySelectorAll('[data-section-link]'));
+
+  const sectionMap = links
+    .map(link => {
+      const id = link.getAttribute('data-section-link');
+      const section = document.getElementById(id);
+      return { id, link, section };
+    })
+    .filter(item => item.section);
+
+  if (!sectionMap.length) return;
+
+  const observer = new IntersectionObserver(entries => {
+    const visible = entries
+      .filter(entry => entry.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+    if (!visible) return;
+
+    const activeId = visible.target.id;
+
+    links.forEach(link => {
+      link.classList.toggle(
+        'is-active',
+        link.getAttribute('data-section-link') === activeId
+      );
+    });
+  }, {
+    root: null,
+    rootMargin: '-35% 0px -55% 0px',
+    threshold: [0, .25, .5, .75, 1]
+  });
+
+  sectionMap.forEach(item => observer.observe(item.section));
+}

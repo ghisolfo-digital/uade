@@ -23,14 +23,45 @@
         </div>
 
 <div class="header-actions">
-  <button class="header-icon-btn" id="share-button" type="button" aria-label="Compartir link">
-    <i class="ti ti-share-3"></i>
+  <button class="header-menu-btn" id="menu-button" type="button" aria-label="Abrir menú" aria-expanded="false">
+    <i class="ti ti-menu-2"></i>
   </button>
 
-  <a class="header-feedback-btn" id="feedback-link" href="#" target="_blank" rel="noopener">
-    Dar feedback a otro equipo
-  </a>
+  <nav class="header-menu" id="header-menu" aria-label="Navegación principal">
+    <a class="menu-link" href="#estado-actual" data-section-link="estado-actual">
+      Qué está pasando ahora
+    </a>
+
+    <a class="menu-link" href="#mi-equipo" data-section-link="mi-equipo">
+      Mi equipo
+    </a>
+
+    <a class="menu-link" href="#grilla-general" data-section-link="grilla-general">
+      Grilla general
+    </a>
+
+    <a class="menu-link" href="#aclaraciones" data-section-link="aclaraciones">
+      Aclaraciones
+    </a>
+
+    <div class="menu-separator"></div>
+
+    <button class="menu-link menu-link-button" id="share-button" type="button">
+      <i class="ti ti-share-3"></i>
+      Compartir link
+    </button>
+
+    <a class="menu-feedback-btn" id="feedback-link" href="#" target="_blank" rel="noopener">
+      Dar feedback a otro equipo
+    </a>
+
+    <button class="menu-link menu-link-button" id="qr-button" type="button">
+      <i class="ti ti-qrcode"></i>
+      Ver QR
+    </button>
+  </nav>
 </div>
+
       </div>
 
       <div id="selected-team-bar" class="selected-team-bar" hidden>
@@ -60,7 +91,7 @@
 
     </section>
 
-    <section>
+    <section id="estado-actual">
       <h2 class="section-title-row section-band">
         <span>
           Qué está pasando ahora
@@ -70,7 +101,9 @@
       <div id="current-status" class="status-grid"></div>
     </section>
 
-    <section id="my-section" style="display:none;">
+    <section id="my-section" data-anchor-section="mi-equipo" style="display:none;">
+  <section id="mi-equipo" style="display:none;">
+  <h2 class="section-band" id="my-team-title">Mi equipo</h2>
       <h2 class="section-band" id="my-team-title">Mi equipo</h2>
       <div id="my-now" class="card"></div>
 
@@ -84,12 +117,12 @@
 
     </section>
 
-    <section>
+    <section id="grilla-general">
       <h2 class="section-band">Grilla general</h2>
       <div id="tables" class="tables"></div>
     </section>
 
-    <section>
+    <section id="aclaraciones">
       <h2 class="section-band">Aclaraciones</h2>
       <div id="texts" class="texts"></div>
     </section>
@@ -119,5 +152,23 @@
       </a>
     </div>
   </footer>
+
+  <div class="qr-lightbox" id="qr-lightbox" hidden>
+  <div class="qr-lightbox-backdrop" data-close-qr></div>
+
+  <div class="qr-lightbox-panel" role="dialog" aria-modal="true" aria-labelledby="qr-title">
+    <button class="qr-close" type="button" data-close-qr aria-label="Cerrar QR">
+      <i class="ti ti-x"></i>
+    </button>
+
+    <h2 id="qr-title">Código QR</h2>
+
+    <div class="qr-image-wrap">
+      <img id="qr-image" alt="Código QR" src="">
+    </div>
+
+    <p class="qr-help">Escaneá este código para abrir el recurso.</p>
+  </div>
+</div>
 </body>
 </html>
