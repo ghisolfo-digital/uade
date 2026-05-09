@@ -246,7 +246,7 @@ function renderMyTeamTitle() {
     return;
   }
 
-  title.textContent = `Mi equipo 👥 ${app.selectedTeam} · ${teamName(app.selectedTeam)}`;
+  title.textContent = `Mi equipo 🧩 ${app.selectedTeam} · ${teamName(app.selectedTeam)}`;
 }
 
 function renderClockTitle() {
@@ -489,7 +489,7 @@ function renderScheduleBlock(row) {
       });
 
       document.getElementById('my-breaks').innerHTML = breakBlocks
-        .map(block => `<span class="break-pill">${escapeHTML(blockLabel(block))}</span>`)
+        .map(block => `<span class="break-pill">☕ ${escapeHTML(blockLabel(block))}</span>`)
         .join('');
     }
 
@@ -518,17 +518,19 @@ function renderScheduleBlock(row) {
       `;
     }
 
-    function renderAction(action) {
-      const now = isActionNow(action);
+function renderAction(action) {
+  const now = isActionNow(action);
+  const isFeedback = action.rol === 'Das feedback';
+  const emoji = isFeedback ? '👈' : '📱';
 
-      return `
-        <div class="agenda-item ${now ? 'now' : ''}">
-          <div class="agenda-main">${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>
-          <div>${escapeHTML(action.rol)}</div>
-          <div class="sub">${escapeHTML(action.detalle)}</div>
-        </div>
-      `;
-    }
+  return `
+    <div class="agenda-item ${now ? 'now' : ''}">
+      <div class="agenda-main">🕒 ${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>
+      <div>${emoji} ${escapeHTML(action.rol)}${isFeedback ? ' a' : ''}</div>
+      <div class="sub">${escapeHTML(action.detalle)}</div>
+    </div>
+  `;
+}
 
 function renderTexts() {
   const box = document.getElementById('texts');
@@ -569,7 +571,7 @@ function myActions(teamId) {
         horaCierre: row.horaCierre,
         aula: row.aula,
         rol: 'Das feedback',
-        detalle: `A ${plainTeamLabel(row.testea)}`
+        detalle: plainTeamLabel(row.testea)
       });
     }
   });

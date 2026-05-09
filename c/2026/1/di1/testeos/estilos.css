@@ -17,6 +17,9 @@
   --green-active: #cfe8cc;
   --green-selected: #d9ead3;
 
+  --selected-team: #eeff41;
+  --selected-team-border: #9eaa1f;
+
   --cream: #fbfcf8;
   --black: #0a0a0a;
 
@@ -508,11 +511,22 @@ a.button {
 }
 
 .schedule-block .is-selected-inline {
-  background: var(--green-selected);
+  background: var(--selected-team);
   border-radius: 8px;
-  padding: 3px 5px;
-  margin-left: -5px;
-  outline: 1px solid rgba(27, 94, 32, .22);
+  padding: 4px 6px;
+  margin-left: -6px;
+  outline: 1px solid var(--selected-team-border);
+}
+
+.pill.selected,
+.status-card .pill.selected {
+  background: var(--selected-team);
+  color: #141800;
+  outline: 1px solid var(--selected-team-border);
+}
+
+.status-card .pill.selected .team-main {
+  color: #141800;
 }
 
 /* ================= MI EQUIPO ================= */
@@ -530,8 +544,9 @@ a.button {
 }
 
 .agenda-item.now {
-  background: var(--green-soft);
-  border-color: var(--green-dark);
+  background: var(--selected-team);
+  border-color: var(--selected-team-border);
+  box-shadow: 0 0 0 1px var(--selected-team-border);
 }
 
 .agenda-main {
@@ -790,23 +805,28 @@ td.is-selected {
 }
 
 .selected-team-bar {
-  background: rgba(0,0,0,.18);
+  background: rgba(0,0,0,.22);
   border-top: 1px solid rgba(255,255,255,.16);
+  margin-left: -16px;
+  margin-right: -16px;
+  margin-bottom: -14px;
+}
+
+.selected-team-inner {
+  width: min(980px, 100%);
+  margin: 0 auto;
+  padding: 7px 16px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
 }
 
 .selected-team-bar[hidden] {
   display: none;
 }
 
-.selected-team-inner {
-  width: min(980px, 100%);
-  margin: 0 auto;
-  padding: 6px 16px 8px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 7px;
-}
+
 
 .selected-team-prefix {
   color: rgba(255,255,255,.78);
@@ -815,20 +835,24 @@ td.is-selected {
   font-weight: 400;
 }
 
+.selected-team-prefix::before {
+  content: "👀 ";
+}
+
 .selected-team-pill {
   width: auto;
   min-height: 24px;
-  border: 1px solid rgba(255,255,255,.45);
+  border: 1px solid rgba(0,0,0,.25);
   border-radius: 999px;
   padding: 4px 7px 4px 9px;
-  background: rgba(255,255,255,.13);
-  color: #fff;
+  background: var(--selected-team);
+  color: #141800;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   font-size: .82rem;
   line-height: 1;
-  font-weight: 400;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -839,8 +863,9 @@ td.is-selected {
 }
 
 .selected-team-pill:hover {
-  background: rgba(255,255,255,.20);
+  background: #f3ff68;
 }
+
 
 .status-card .now-testing-line {
   background: rgba(255,255,255,.88);
@@ -878,7 +903,12 @@ td.is-selected {
   outline: 1px solid rgba(255,255,255,.45);
 }
 
-
+.status-card .now-testing-line:has(.is-selected-inline),
+.status-card .is-selected-inline {
+  background: var(--selected-team);
+  color: #141800;
+  outline: 1px solid var(--selected-team-border);
+}
 
 .section-band {
   width: 100vw;
