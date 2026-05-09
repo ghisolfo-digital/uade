@@ -283,19 +283,21 @@ function renderClockTitle() {
 
     function renderLinks() {
       setLink('feedback-link', app.links.feedback, 'Hacer feedback');
-      setLink('extra-link', app.links.extra, 'Link adicional');
+      
 
       document.getElementById('share-button').onclick = async () => {
-        const url = window.location.href;
+        const url = new URL(window.location.href);
+url.searchParams.delete('e');
+url.searchParams.delete('t');
         const title = app.selectedTeam
           ? `Agenda del equipo ${app.selectedTeam} · ${teamName(app.selectedTeam)}`
           : app.config.titulo || 'Testeos UX';
 
         try {
           if (navigator.share) {
-            await navigator.share({ title, url });
+            await navigator.share({ title, url: url.toString() });
           } else {
-            await navigator.clipboard.writeText(url);
+            await navigator.clipboard.writeText(url.toString());
             alert('Link copiado');
           }
         } catch (err) {
