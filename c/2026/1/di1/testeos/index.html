@@ -453,7 +453,7 @@
   color: var(--muted);
   font-size: .82rem;
   line-height: 1.18;
-  padding-left: 22px;
+  padding-left: 104px;
 }
 
 .feedback-compact-list {
@@ -480,6 +480,22 @@
   padding: 3px 5px;
   margin-left: -5px;
 }
+
+
+.section-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-title-clock {
+  font-size: .9rem;
+  font-weight: 650;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 
 @media (max-width: 640px) {
   .card {
@@ -534,10 +550,13 @@
       </div>
     </section>
 
-    <section>
-      <h2>Qué está pasando ahora</h2>
-      <div id="current-status" class="status-grid"></div>
-    </section>
+<section>
+  <h2 class="section-title-row">
+    <span>Qué está pasando ahora</span>
+    <span class="section-title-clock">🕒 <span id="current-clock-title">--:--</span> hs.</span>
+  </h2>
+  <div id="current-status" class="status-grid"></div>
+</section>
 
     <section id="my-section" style="display:none;">
       <h2>Mi equipo</h2>
@@ -699,16 +718,22 @@ if (tipo === 'agenda') {
       app.allBlocks = uniqueBlocks(app.agenda);
     }
 
-    function renderAll() {
-      renderHeader();
-      renderSelector();
-      renderLinks();
-      renderCurrentStatus();
-      renderTables();
-      renderMySection();
-      renderTexts();
-      renderFooter();
-    }
+function renderAll() {
+  renderHeader();
+  renderSelector();
+  renderLinks();
+  renderClockTitle();
+  renderCurrentStatus();
+  renderTables();
+  renderMySection();
+  renderTexts();
+  renderFooter();
+}
+
+function renderClockTitle() {
+  const el = document.getElementById('current-clock-title');
+  if (el) el.textContent = currentClockLabel();
+}
 
     function renderHeader() {
       document.title = app.config.titulo || 'Testeos UX';
@@ -796,10 +821,7 @@ function renderCurrentStatus() {
   if (!nowRows.length) {
     box.innerHTML = `
       <div class="card">
-        <div class="eyebrow-row">
-          <div class="eyebrow">Ahora</div>
-          <div class="eyebrow-clock">🕒 ${escapeHTML(currentClockLabel())}</div>
-        </div>
+<div class="eyebrow">Ahora</div>
         <div class="big">No hay un bloque activo</div>
         <div class="sub">Puede ser antes del primer turno o después del último.</div>
       </div>
@@ -812,10 +834,7 @@ function renderCurrentStatus() {
 
     return `
       <div class="card status-card ${selectedIsHere ? 'current-for-team' : ''}">
-        <div class="eyebrow-row">
-          <div class="eyebrow">AULA <span class="aula-code">${escapeHTML(row.aula)}</span> · ${escapeHTML(blockLabel(row))}</div>
-          <div class="eyebrow-clock">🕒 ${escapeHTML(currentClockLabel())}</div>
-        </div>
+<div class="eyebrow">AULA <span class="aula-code">${escapeHTML(row.aula)}</span> · ${escapeHTML(blockLabel(row))}</div>
 
         <div class="now-testing-line team-label-large">
           <span aria-hidden="true">📱</span>
@@ -1051,9 +1070,9 @@ function myActions(teamId) {
       return /^\d{1,2}:\d{2}$/.test(String(value || '').trim());
     }
 
-    function blockLabel(item) {
-      return `${item.horaInicio} a ${item.horaCierre}`;
-    }
+function blockLabel(item) {
+  return `${item.horaInicio} a ${item.horaCierre} hs.`;
+}
 
     function uniqueBlocks(agenda) {
       const blocks = [];
