@@ -246,7 +246,7 @@ function renderMyTeamTitle() {
     return;
   }
 
-  title.textContent = `Mi equipo 🧭 ${teamNumber(app.selectedTeam)} · ${teamName(app.selectedTeam)}`;
+  title.textContent = `Mi equipo 🧩 ${teamNumber(app.selectedTeam)} · ${teamName(app.selectedTeam)}`;
 }
 
 function renderClockTitle() {
@@ -513,10 +513,9 @@ function renderMyNow(nowAction, nextAction) {
       <div class="eyebrow">Ahora · ${myTeam}</div>
       <div class="big">Aula ${escapeHTML(nowAction.aula)} · ${escapeHTML(rolTexto)}</div>
       <div class="sub">
-        ${escapeHTML(blockLabel(nowAction))}
         ${isFeedback
-          ? ` · <strong>${escapeHTML(nowAction.detalle)}</strong>`
-          : ' · Tu equipo y vos ponen a prueba el prototipo'
+          ? `<strong>${escapeHTML(nowAction.detalle)}</strong>`
+          : 'Tu equipo y vos ponen a prueba el prototipo'
         }
       </div>
     `;
@@ -558,23 +557,34 @@ function renderAction(action) {
     `;
   }
 
-  const emoji = isFeedback ? '👈' : '📱';
-  const rolTexto = isFeedback ? 'Das feedback a' : 'Testeás';
+  if (isFeedback) {
+    return `
+      <div class="agenda-item ${now ? 'now' : ''}">
+        <div class="agenda-main">🕒 ${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>
+        <div class="agenda-action-row">
+          <span class="agenda-action-emoji">👈</span>
+          <span class="agenda-action-content">
+            <span>Das feedback a</span>
+            <strong>${escapeHTML(action.detalle)}</strong>
+          </span>
+        </div>
+      </div>
+    `;
+  }
 
   return `
     <div class="agenda-item ${now ? 'now' : ''}">
       <div class="agenda-main">🕒 ${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>
-      <div>${emoji} ${escapeHTML(rolTexto)}</div>
-      <div class="sub">
-        ${isFeedback
-          ? `<strong>${escapeHTML(action.detalle)}</strong>`
-          : escapeHTML(action.detalle)
-        }
+      <div class="agenda-action-row">
+        <span class="agenda-action-emoji">📱</span>
+        <span class="agenda-action-content">
+          <span>Testeás</span>
+          <span class="sub">Tu equipo y vos ponen a prueba el prototipo</span>
+        </span>
       </div>
     </div>
   `;
 }
-
 function renderTexts() {
   const box = document.getElementById('texts');
 
