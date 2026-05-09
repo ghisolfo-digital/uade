@@ -59,7 +59,7 @@ body {
 .site-header {
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 4000;
   background: var(--header-bg);
   border-bottom: 1px solid rgba(0,0,0,.18);
   box-shadow: 0 2px 8px rgba(0,0,0,.18);
@@ -1063,16 +1063,13 @@ main > section > h2 {
   display: grid;
   align-content: start;
   gap: 4px;
-  z-index: 3000;
+  z-index: 4100;
 
   transform: translateX(100%);
   opacity: 0;
   pointer-events: none;
-  transition:
-    transform .22s ease,
-    opacity .22s ease;
+  transition: transform .22s ease, opacity .22s ease;
 }
-
 .header-menu.is-open {
   transform: translateX(0);
   opacity: 1;
@@ -1147,9 +1144,8 @@ main > section > h2 {
 .menu-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 2990;
+  z-index: 3500;
   background: rgba(0,0,0,.45);
-  opacity: 1;
 }
 
 .menu-backdrop[hidden] {
