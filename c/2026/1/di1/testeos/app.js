@@ -2,7 +2,6 @@
 const QR_IMAGE_URL = 'https://drive.google.com/uc?export=view&id=REEMPLAZAR_ID_DE_GOOGLE_DRIVE';
 const QR_PUBLIC_URL = QR_IMAGE_URL;
 
-const BACKUP_CSV_URL = './data-backup.csv';
 const CSV_REFRESH_MS = 120000;
 const CSV_REFRESH_JITTER_MS = 30000;
 const CSV_FIRST_LIVE_JITTER_MS = 25000;
@@ -44,7 +43,7 @@ setInterval(renderAll, 30000);
   } catch (err) {
     document.querySelector('main').innerHTML = `
       <section class="notice">
-        No se pudo cargar ni el CSV de Google Sheets ni el backup local. Revisá que el CSV esté publicado y que exista data-backup.csv.
+        No se pudo cargar el CSV de Google Sheets. Revisá que el CSV esté publicado correctamente.
       </section>
     `;
     console.error(err);
@@ -59,12 +58,7 @@ async function loadInitialCsv() {
     return cached;
   }
 
-  try {
-    return await fetchBackupCsv();
-  } catch (backupErr) {
-    console.warn('No se pudo cargar backup local, intento Google Sheets', backupErr);
-    return await fetchCsv();
-  }
+  return await fetchCsv();
 }
 
 function applyCsvText(csvText) {
@@ -101,12 +95,6 @@ function scheduleCsvRefresh() {
     await refreshDataFromCsv();
     scheduleCsvRefresh();
   }, delay);
-}
-
-async function fetchBackupCsv() {
-  const res = await fetch(BACKUP_CSV_URL + '?cache=' + Date.now());
-  if (!res.ok) throw new Error('Error cargando backup CSV');
-  return await res.text();
 }
 
 function saveCachedCsv(csvText) {
@@ -477,7 +465,9 @@ function renderScheduleBlock(row) {
 }
 
 function renderMySection() {
-  const section = document.getElementById('mi-equipo');
+  const section = document.getElementById('my-section');
+
+  if (!section) return;
 
   if (!app.selectedTeam) {
     section.style.display = 'none';
@@ -923,6 +913,7 @@ menu.addEventListener('click', event => {
 
   if (targetId === 'mi-equipo') {
     event.preventDefault();
+    setActiveMenuLink(targetId);
     closeHeaderMenu();
 
     if (!app.selectedTeam) {
@@ -944,6 +935,7 @@ menu.addEventListener('click', event => {
   const target = document.getElementById(targetId);
   if (target) {
     event.preventDefault();
+    setActiveMenuLink(targetId);
     closeHeaderMenu();
     scrollToSection(target);
   }
@@ -1037,27 +1029,38 @@ function setupSectionSpy() {
 
   if (!sectionMap.length) return;
 
-  const observer = new IntersectionObserver(entries => {
-    const visible = entries
-      .filter(entry => entry.isIntersecting && entry.target.offsetParent !== null)
-      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+  function updateActiveByScroll() {
+    const header = document.querySelector('.site-header');
+    const headerHeight = header ? header.offsetHeight : 0;
+    const markerY = window.scrollY + headerHeight + 90;
 
-    if (!visible) return;
+    const visibleSections = sectionMap.filter(item => {
+      if (!item.section || item.section.offsetParent === null) return false;
 
-    const activeItem = sectionMap.find(item => item.section === visible.target);
-    if (!activeItem) return;
-
-    links.forEach(link => {
-      link.classList.toggle(
-        'is-active',
-        link.getAttribute('data-section-link') === activeItem.id
-      );
+      const top = item.section.offsetTop;
+      const bottom = top + item.section.offsetHeight;
+      return markerY >= top && markerY < bottom;
     });
-  }, {
-    root: null,
-    rootMargin: '-30% 0px -55% 0px',
-    threshold: [0, .25, .5, .75, 1]
-  });
 
-  sectionMap.forEach(item => observer.observe(item.section));
+    const activeItem = visibleSections[visibleSections.length - 1] || sectionMap.find(item => {
+      return item.section && item.section.offsetParent !== null;
+    });
+
+    if (activeItem) {
+      setActiveMenuLink(activeItem.id);
+    }
+  }
+
+  updateActiveByScroll();
+  window.addEventListener('scroll', updateActiveByScroll, { passive: true });
+  window.addEventListener('resize', updateActiveByScroll);
+}
+
+function setActiveMenuLink(activeId) {
+  document.querySelectorAll('[data-section-link]').forEach(link => {
+    link.classList.toggle(
+      'is-active',
+      link.getAttribute('data-section-link') === activeId
+    );
+  });
 }
