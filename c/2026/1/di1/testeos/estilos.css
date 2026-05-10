@@ -1510,3 +1510,100 @@ gap: 4px;
   }
 }
 
+
+
+/* ================= GRILLA POR FECHA / ESTADOS PASADOS ================= */
+
+.date-grid-group { margin: 0 0 18px; }
+.date-grid-group + .date-grid-group { margin-top: 26px; }
+.date-grid-title { margin-top: 46px; margin-bottom: 12px; }
+
+.date-grid-toggle {
+  width: min(980px, 100%);
+  margin: 0 auto;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #fff;
+  font-family: var(--ff-kreon);
+  font-size: 1.35rem;
+  line-height: 1.1;
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+}
+
+.date-grid-toggle:hover,
+.date-grid-toggle:focus-visible { background: rgba(255,255,255,.08); outline: 0; }
+.date-grid-toggle-icon { font-weight: 300; font-size: 1.45rem; line-height: 1; }
+.date-grid-content[hidden] { display: none; }
+
+.block-title {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.block-title-main { min-width: 0; }
+
+.done-check {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #2e7d32;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.06rem;
+  line-height: 1;
+  font-weight: 900;
+  flex: 0 0 auto;
+  box-shadow: 0 1px 4px rgba(0,0,0,.18);
+}
+
+.schedule-block.is-past { background: #f2f3f1; border-color: #cfd5cc; color: #6b7068; }
+.schedule-block.is-past .block-title { background: #e1e4df; }
+.schedule-block.is-past .block-title-time,
+.schedule-block.is-past .test-team,
+.schedule-block.is-past .team-main,
+.schedule-block.is-past .test-topic,
+.schedule-block.is-past .role-label,
+.schedule-block.is-past .feedback-row,
+.schedule-block.is-past .row-emoji { color: #777d74; }
+.schedule-block.is-past .block-title-main,
+.schedule-block.is-past .block-body { text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: rgba(80,80,80,.55); }
+.schedule-block.is-past.is-now { background: #f2f3f1; border-color: #cfd5cc; }
+
+.agenda-date-heading {
+  font-family: var(--ff-kreon);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--green-dark);
+  margin: 4px 2px -2px;
+}
+
+.agenda-main-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.agenda-item.is-past { background: #f2f3f1; border-color: #cfd5cc; color: #777d74; }
+.agenda-item.is-past .agenda-main,
+.agenda-item.is-past .agenda-action-row,
+.agenda-item.is-past .sub,
+.agenda-item.is-past strong { color: #777d74; }
+.agenda-item.is-past .agenda-main,
+.agenda-item.is-past .agenda-action-row { text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: rgba(80,80,80,.55); }
+
+@media (max-width: 640px) {
+  .date-grid-toggle { font-size: 1.22rem; }
+  .done-check { width: 26px; height: 26px; font-size: 1rem; }
+}

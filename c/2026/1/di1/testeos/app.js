@@ -1,8 +1,10 @@
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQb2Ggbd5Y1VOwTbAI7CjvaHNDwyYs5Y5IuJQCtR2G1eF7pN_bECM4_EQKMPvmwUredXZ2vMmZ43uiu/pub?gid=331164853&single=true&output=csv';
 const CSV_REFRESH_MS = 120000;
 const CSV_REFRESH_JITTER_MS = 30000;
+const CSV_REFRESH_OFFDAY_MS = 1800000;
+const CSV_REFRESH_OFFDAY_JITTER_MS = 300000;
 const CSV_FIRST_LIVE_JITTER_MS = 25000;
-const LOCAL_CACHE_KEY = 'testeosUX_csv_cache_v1';
+const LOCAL_CACHE_KEY = 'testeosUX_csv_cache_v2_fechas';
 
 const app = {
   config: {},
@@ -13,7 +15,8 @@ const app = {
   aulas: new Map(),
   selectedTeam: null,
   allBlocks: [],
-  aulaOrder: []
+  aulaOrder: [],
+  dateOpenState: {}
 };
 
     init();
@@ -88,12 +91,20 @@ async function refreshDataFromCsv() {
 }
 
 function scheduleCsvRefresh() {
-  const delay = CSV_REFRESH_MS + randomBetween(0, CSV_REFRESH_JITTER_MS);
+  const delay = getCsvRefreshDelay();
 
   setTimeout(async () => {
     await refreshDataFromCsv();
     scheduleCsvRefresh();
   }, delay);
+}
+
+function getCsvRefreshDelay() {
+  if (isAnyAgendaDateToday()) {
+    return CSV_REFRESH_MS + randomBetween(0, CSV_REFRESH_JITTER_MS);
+  }
+
+  return CSV_REFRESH_OFFDAY_MS + randomBetween(0, CSV_REFRESH_OFFDAY_JITTER_MS);
 }
 
 function saveCachedCsv(csvText) {
@@ -132,105 +143,106 @@ function randomBetween(min, max) {
     }
 
     function parseData(rows) {
-      rows.shift();
+  rows.shift();
 
-      rows.forEach(row => {
-        const tipo = cell(row, 0).trim().toLowerCase();
-        const fila = cell(row, 1).trim().toLowerCase();
+  rows.forEach(row => {
+    const tipo = cell(row, 0).trim().toLowerCase();
+    const fila = cell(row, 1).trim().toLowerCase();
 
-        if (fila !== 'data') return;
+    if (fila !== 'data') return;
 
-        const a = cell(row, 2);
-        const b = cell(row, 3);
-        const c = cell(row, 4);
-        const d = cell(row, 5);
-        const e = cell(row, 6);
+    const a = cell(row, 2);
+    const b = cell(row, 3);
+    const c = cell(row, 4);
+    const d = cell(row, 5);
+    const e = cell(row, 6);
 
-        if (tipo === 'config') {
-          app.config[a] = b;
-        }
-
-        if (tipo === 'equipos') {
-          app.teams.set(a, {
-            id: a,
-            nombre: b,
-            tematica: c
-          });
-        }
-
-if (tipo === 'agenda') {
-  // Formato nuevo recomendado:
-  // agenda | data | hora_inicio | hora_cierre | aula | testea | feedback_1 | feedback_2 | ...
-  // También mantiene compatibilidad con el formato anterior:
-  // agenda | data | hora | aula | testea | feedback_1 | feedback_2 | ...
-  const usaFormatoNuevo = isTimeLike(b);
-
-  const horaInicio = a;
-  const horaCierre = usaFormatoNuevo ? b : '';
-  const aula = usaFormatoNuevo ? c : b;
-  const testea = usaFormatoNuevo ? d : c;
-
-  const feedbacks = row
-    .slice(usaFormatoNuevo ? 6 : 5)
-    .map(value => String(value || '').trim())
-    .filter(value => value !== '');
-
-  if (aula && !app.aulaOrder.includes(aula)) {
-    app.aulaOrder.push(aula);
-  }
-
-  app.agenda.push({
-    horaInicio,
-    horaCierre,
-    aula,
-    testea,
-    feedbacks
-  });
-}
-
-        if (tipo === 'texto') {
-          app.texts.push({
-            orden: Number(a) || 999,
-            texto: b
-          });
-        }
-
-        if (tipo === 'links') {
-          app.links[a] = {
-            label: b,
-            url: c,
-            url_qr: d
-          };
-        }
-
-
-if (tipo === 'aulas') {
-  app.aulas.set(a, {
-    aula: a,
-    ubicacion: b,
-    comentario: c
-  });
-}
-
-      });
-
-      inferMissingEndTimes();
-
-      app.agenda.sort((x, y) => {
-        const byTime = timeToMin(x.horaInicio) - timeToMin(y.horaInicio);
-        if (byTime !== 0) return byTime;
-
-        return app.aulaOrder.indexOf(x.aula) - app.aulaOrder.indexOf(y.aula);
-      });
-
-      app.texts.sort((x, y) => x.orden - y.orden);
-      app.allBlocks = uniqueBlocks(app.agenda);
+    if (tipo === 'config') {
+      app.config[a] = b;
     }
+
+    if (tipo === 'equipos') {
+      app.teams.set(a, {
+        id: a,
+        nombre: b,
+        tematica: c
+      });
+    }
+
+    if (tipo === 'aulas') {
+      app.aulas.set(a, {
+        aula: a,
+        ubicacion: b,
+        comentario: c
+      });
+    }
+
+    if (tipo === 'agenda') {
+      const fecha = a;
+      const fechaObj = parseDateValue(fecha);
+      const fechaKey = fechaObj ? dateKey(fechaObj) : '';
+      const horaInicio = b;
+      const horaCierre = c;
+      const aula = d;
+      const testea = e;
+
+      const feedbacks = row
+        .slice(7)
+        .map(value => String(value || '').trim())
+        .filter(value => value !== '');
+
+      if (aula && !app.aulaOrder.includes(aula)) {
+        app.aulaOrder.push(aula);
+      }
+
+      app.agenda.push({
+        fecha,
+        fechaKey,
+        horaInicio,
+        horaCierre,
+        aula,
+        testea,
+        feedbacks
+      });
+    }
+
+    if (tipo === 'texto') {
+      app.texts.push({
+        orden: Number(a) || 999,
+        texto: b
+      });
+    }
+
+    if (tipo === 'links') {
+      app.links[a] = {
+        label: b,
+        url: c,
+        url_qr: d
+      };
+    }
+  });
+
+  inferMissingEndTimes();
+
+  app.agenda.sort((x, y) => {
+    const byDate = String(x.fechaKey).localeCompare(String(y.fechaKey));
+    if (byDate !== 0) return byDate;
+
+    const byTime = timeToMin(x.horaInicio) - timeToMin(y.horaInicio);
+    if (byTime !== 0) return byTime;
+
+    return app.aulaOrder.indexOf(x.aula) - app.aulaOrder.indexOf(y.aula);
+  });
+
+  app.texts.sort((x, y) => x.orden - y.orden);
+  app.allBlocks = uniqueBlocks(app.agenda);
+}
 
 function renderAll() {
   renderHeader();
   renderSelector();
   renderLinks();
+  renderGrillaMenuLinks();
   renderSelectedTeamBar();
   renderMyTeamTitle();
   renderClockTitle();
@@ -280,30 +292,18 @@ function renderHeader() {
 function buildDocumentTitle() {
   const titulo = getAppTitle();
   const materia = app.config.materia || '';
-  const fecha = formatDateForTitle(app.config.fecha || '');
+  const fecha = buildAgendaDateSummary({ capitalizeFirstWord: false });
 
   return [titulo, materia, fecha, '@ghisolfo.digital']
     .filter(Boolean)
     .join(' - ');
 }
 
-function formatDateForTitle(value) {
-  const raw = String(value || '').trim();
-  const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-
-  if (!match) return raw;
-
-  const day = String(Number(match[1])).padStart(2, '0');
-  const month = String(Number(match[2])).padStart(2, '0');
-  const year = match[3];
-
-  return `${day}/${month}/${year}`;
-}
 function buildHeaderMetaText() {
   const universidad = app.config.universidad || '';
   const materia = app.config.materia || '';
-  const fecha = formatDateWithWeekday(app.config.fecha || '');
   const turno = app.config.turno || '';
+  const fecha = buildAgendaDateSummary({ capitalizeFirstWord: true });
 
   const bloquePrincipal = [materia, fecha]
     .filter(Boolean)
@@ -316,16 +316,43 @@ function buildHeaderMetaText() {
   return bloquePrincipal || bloqueFallback;
 }
 
-function formatDateWithWeekday(value) {
+function buildAgendaDateSummary(options = {}) {
+  const dates = agendaDates();
+  if (!dates.length) return '';
+
+  const upcoming = nextActiveOrFutureAgendaDate();
+  if (upcoming) {
+    return formatDateWithWeekday(upcoming.date, {
+      capitalizeFirstWord: options.capitalizeFirstWord !== false
+    });
+  }
+
+  if (dates.length === 1) {
+    return formatDateWithWeekday(dates[0].date, {
+      capitalizeFirstWord: options.capitalizeFirstWord !== false
+    });
+  }
+
+  if (dates.length === 2) {
+    return formatTwoDates(dates[0].date, dates[1].date, {
+      capitalizeFirstWord: options.capitalizeFirstWord !== false
+    });
+  }
+
+  return formatMonthRange(dates.map(item => item.date), {
+    capitalizeFirstWord: options.capitalizeFirstWord !== false
+  });
+}
+
+function parseDateValue(value) {
   const raw = String(value || '').trim();
   const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
 
-  if (!match) return raw;
+  if (!match) return null;
 
   const day = Number(match[1]);
   const month = Number(match[2]);
   const year = Number(match[3]);
-
   const date = new Date(year, month - 1, day);
 
   if (
@@ -333,46 +360,182 @@ function formatDateWithWeekday(value) {
     date.getMonth() !== month - 1 ||
     date.getDate() !== day
   ) {
-    return raw;
+    return null;
   }
 
-  const weekdays = [
-    'Domingo',
-    'Lunes',
-    'Martes',
-    'Miércoles',
-    'Jueves',
-    'Viernes',
-    'Sábado'
-  ];
-
-  return `${weekdays[date.getDay()]} ${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
-}
-
-function getFirstBlockDateTime() {
-  const testDate = getTestDate();
-  if (!testDate || !app.allBlocks.length) return null;
-
-  const firstBlock = app.allBlocks[0];
-  const minutes = timeToMin(firstBlock.horaInicio);
-
-  const date = new Date(testDate);
-  date.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
-
+  date.setHours(0, 0, 0, 0);
   return date;
 }
 
-function getLastBlockDateTime() {
-  const testDate = getTestDate();
-  if (!testDate || !app.allBlocks.length) return null;
+function dateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
 
-  const lastBlock = app.allBlocks[app.allBlocks.length - 1];
-  const minutes = timeToMin(lastBlock.horaCierre);
+function dateFromKey(key) {
+  const match = String(key || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
 
-  const date = new Date(testDate);
-  date.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
-
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  date.setHours(0, 0, 0, 0);
   return date;
+}
+
+function agendaDates() {
+  const map = new Map();
+
+  app.agenda.forEach(row => {
+    if (!row.fechaKey) return;
+    if (!map.has(row.fechaKey)) {
+      map.set(row.fechaKey, {
+        key: row.fechaKey,
+        date: dateFromKey(row.fechaKey),
+        label: row.fecha
+      });
+    }
+  });
+
+  return Array.from(map.values())
+    .filter(item => item.date)
+    .sort((a, b) => a.date - b.date);
+}
+
+function nextActiveOrFutureAgendaDate() {
+  const now = new Date();
+
+  return agendaDates().find(item => {
+    const last = getLastBlockDateTime(item.key);
+    return last && last >= now;
+  }) || null;
+}
+
+function isAnyAgendaDateToday() {
+  return agendaDates().some(item => isDateToday(item.date));
+}
+
+function isDateToday(date) {
+  if (!date) return false;
+  const today = new Date();
+
+  return (
+    today.getFullYear() === date.getFullYear() &&
+    today.getMonth() === date.getMonth() &&
+    today.getDate() === date.getDate()
+  );
+}
+
+function currentDateKey() {
+  return dateKey(new Date());
+}
+
+function formatDateWithWeekday(dateOrValue, options = {}) {
+  const date = dateOrValue instanceof Date ? dateOrValue : parseDateValue(dateOrValue);
+  if (!date) return String(dateOrValue || '').trim();
+
+  const weekdays = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const text = `${weekdays[date.getDay()]} ${formatDateNumeric(date)}`;
+
+  return options.capitalizeFirstWord ? capitalizeFirst(text) : text;
+}
+
+function formatTwoDates(firstDate, secondDate, options = {}) {
+  const sameWeekday = firstDate.getDay() === secondDate.getDay();
+  const first = formatDateWithWeekday(firstDate, {
+    capitalizeFirstWord: options.capitalizeFirstWord
+  });
+
+  const second = sameWeekday
+    ? formatDateNumeric(secondDate)
+    : formatDateWithWeekday(secondDate, { capitalizeFirstWord: false });
+
+  return `${first} y ${second}`;
+}
+
+function formatDateNumeric(date) {
+  return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+}
+
+function formatShortDate(date) {
+  return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function formatMonthRange(dates, options = {}) {
+  const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const sorted = dates.slice().sort((a, b) => a - b);
+  const uniqueMonthKeys = [];
+
+  sorted.forEach(date => {
+    const key = `${date.getFullYear()}-${date.getMonth()}`;
+    if (!uniqueMonthKeys.includes(key)) uniqueMonthKeys.push(key);
+  });
+
+  const monthItems = uniqueMonthKeys.map(key => {
+    const [year, month] = key.split('-').map(Number);
+    return { year, month, name: months[month] };
+  });
+
+  let text = '';
+
+  if (monthItems.length === 1) {
+    const item = monthItems[0];
+    text = `${item.name} ${item.year}`;
+  } else if (monthItems.length === 2 && monthItems[0].year === monthItems[1].year) {
+    text = `${monthItems[0].name} y ${monthItems[1].name} ${monthItems[0].year}`;
+  } else {
+    const first = monthItems[0];
+    const last = monthItems[monthItems.length - 1];
+    const sameYear = first.year === last.year;
+    text = sameYear
+      ? `${first.name} a ${last.name} ${first.year}`
+      : `${first.name} ${first.year} a ${last.name} ${last.year}`;
+  }
+
+  return options.capitalizeFirstWord ? capitalizeFirst(text) : text;
+}
+
+function capitalizeFirst(text) {
+  const raw = String(text || '');
+  return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : raw;
+}
+
+function getFirstBlockDateTime(fechaKey = null) {
+  const blocks = fechaKey
+    ? app.allBlocks.filter(block => block.fechaKey === fechaKey)
+    : app.allBlocks;
+
+  if (!blocks.length) return null;
+  return blockDateTime(blocks[0], 'inicio');
+}
+
+function getLastBlockDateTime(fechaKey = null) {
+  const blocks = fechaKey
+    ? app.allBlocks.filter(block => block.fechaKey === fechaKey)
+    : app.allBlocks;
+
+  if (!blocks.length) return null;
+  return blockDateTime(blocks[blocks.length - 1], 'cierre');
+}
+
+function getNextGlobalBlockDateTime() {
+  const now = new Date();
+  const upcoming = app.allBlocks
+    .map(block => blockDateTime(block, 'inicio'))
+    .filter(date => date && date > now)
+    .sort((a, b) => a - b)[0];
+
+  return upcoming || null;
+}
+
+function blockDateTime(block, point = 'inicio') {
+  const date = dateFromKey(block.fechaKey);
+  if (!date) return null;
+
+  const minutes = timeToMin(point === 'cierre' ? block.horaCierre : block.horaInicio);
+  date.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
+  return date;
+}
+
+function rowDateTime(row, point = 'inicio') {
+  return blockDateTime(row, point);
 }
 
 function formatTimeUntil(targetDate) {
@@ -384,37 +547,15 @@ function formatTimeUntil(targetDate) {
   const totalMinutes = Math.ceil(diffMs / 60000);
   const hours = Math.floor(totalMinutes / 60);
 
-  const todayStart = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate()
-  );
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
 
-  const targetStart = new Date(
-    targetDate.getFullYear(),
-    targetDate.getMonth(),
-    targetDate.getDate()
-  );
+  const calendarDays = Math.round((targetStart - todayStart) / (1000 * 60 * 60 * 24));
 
-  const calendarDays = Math.round(
-    (targetStart - todayStart) / (1000 * 60 * 60 * 24)
-  );
-
-  if (calendarDays > 1) {
-    return `Faltan ${calendarDays} días para el primer bloque.`;
-  }
-
-  if (calendarDays === 1) {
-    return `Falta 1 día para el primer bloque.`;
-  }
-
-  if (hours > 1) {
-    return `Faltan ${hours} horas para el primer bloque.`;
-  }
-
-  if (hours === 1) {
-    return `Falta 1 hora para el primer bloque.`;
-  }
+  if (calendarDays > 1) return `Faltan ${calendarDays} días para el primer bloque.`;
+  if (calendarDays === 1) return `Falta 1 día para el primer bloque.`;
+  if (hours > 1) return `Faltan ${hours} horas para el primer bloque.`;
+  if (hours === 1) return `Falta 1 hora para el primer bloque.`;
 
   return `Falta menos de 1 hora para el primer bloque.`;
 }
@@ -423,77 +564,21 @@ function testDateStatus() {
   const firstBlockDateTime = getFirstBlockDateTime();
   const lastBlockDateTime = getLastBlockDateTime();
 
-  if (!firstBlockDateTime || !lastBlockDateTime) {
-    return 'unknown';
-  }
+  if (!firstBlockDateTime || !lastBlockDateTime) return 'unknown';
 
   const now = new Date();
-
   if (now < firstBlockDateTime) return 'future';
   if (now > lastBlockDateTime) return 'past';
-
   return 'active-day';
 }
 
-
-function getTestDate() {
-  const raw = String(app.config.fecha || '').trim();
-  const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-
-  if (!match) return null;
-
-  const day = Number(match[1]);
-  const month = Number(match[2]);
-  const year = Number(match[3]);
-
-  const date = new Date(year, month - 1, day);
-
-  if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
-  ) {
-    return null;
-  }
-
-  return date;
-}
-
 function isTestDateToday() {
-  const testDate = getTestDate();
-
-  if (!testDate) return true;
-
-  const today = new Date();
-
-  return (
-    today.getFullYear() === testDate.getFullYear() &&
-    today.getMonth() === testDate.getMonth() &&
-    today.getDate() === testDate.getDate()
-  );
+  return isAnyAgendaDateToday();
 }
 
 function formatTodayWithWeekdayAndTime() {
   const d = new Date();
-
-  const weekdays = [
-    'Domingo',
-    'Lunes',
-    'Martes',
-    'Miércoles',
-    'Jueves',
-    'Viernes',
-    'Sábado'
-  ];
-
-  const dayName = weekdays[d.getDay()];
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear();
-  const hour = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-
-  return `${dayName} ${day}/${month}/${year}, ${hour}:${minutes}`;
+  return `${formatDateWithWeekday(d, { capitalizeFirstWord: true })}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 function renderSelectedTeamBar() {
@@ -571,7 +656,7 @@ function renderLinks() {
   shareButton.onclick = async () => {
   const url = new URL(window.location.origin + window.location.pathname);
 
-    const title = app.config.titulo || 'Testeos UX';
+    const title = getAppTitle();
 
     try {
       if (navigator.share) {
@@ -584,6 +669,28 @@ function renderLinks() {
       console.warn(err);
     }
   };
+}
+
+function renderGrillaMenuLinks() {
+  const container = document.getElementById('grilla-menu-links');
+  if (!container) return;
+
+  const dates = agendaDates();
+
+  if (dates.length <= 1) {
+    container.innerHTML = `
+      <a class="menu-link" href="#grilla-general" data-section-link="grilla-general">
+        Grilla general
+      </a>
+    `;
+    return;
+  }
+
+  container.innerHTML = dates.map(dateInfo => `
+    <a class="menu-link" href="#grilla-${escapeHTML(dateInfo.key)}" data-section-link="grilla-${escapeHTML(dateInfo.key)}">
+      Grilla · ${escapeHTML(formatShortDate(dateInfo.date))}
+    </a>
+  `).join('');
 }
 
 function setLink(id, data, fallbackLabel) {
@@ -654,42 +761,112 @@ function renderCurrentStatus() {
 }
 function renderTables() {
   const box = document.getElementById('tables');
-  const aulas = app.aulaOrder.length
+  if (!box) return;
+
+  const dates = agendaDates();
+
+  if (!dates.length) {
+    box.innerHTML = `
+      <h2 class="section-band"><span class="section-band-content">Grilla general</span></h2>
+      <div class="tables"></div>
+    `;
+    return;
+  }
+
+  box.innerHTML = dates.map(dateInfo => renderDateGridGroup(dateInfo, dates.length > 1)).join('');
+
+  box.querySelectorAll('[data-toggle-date]').forEach(button => {
+    button.addEventListener('click', () => {
+      const key = button.getAttribute('data-toggle-date');
+      app.dateOpenState[key] = !isDateGridOpen(key);
+      renderTables();
+    });
+  });
+}
+
+function renderDateGridGroup(dateInfo, hasMultipleDates) {
+  ensureDateOpenState(dateInfo.key);
+
+  const open = isDateGridOpen(dateInfo.key);
+  const title = hasMultipleDates
+    ? `Grilla general · ${formatDateWithWeekday(dateInfo.date, { capitalizeFirstWord: true })}`
+    : 'Grilla general';
+
+  const rowsByAula = app.aulaOrder.length
     ? app.aulaOrder
     : [...new Set(app.agenda.map(x => x.aula).filter(Boolean))];
 
-  box.innerHTML = aulas.map(aula => {
-    const rows = app.agenda.filter(item => item.aula === aula);
+  const content = rowsByAula.map(aula => {
+    const rows = app.agenda.filter(item => item.fechaKey === dateInfo.key && item.aula === aula);
+    if (!rows.length) return '';
 
-const dataAula = aulaData(aula);
+    const dataAula = aulaData(aula);
 
-return `
-  <div class="card">
-    <h3 class="aula-title-bar">
-      <span>Aula <span class="aula-code">${escapeHTML(aula)}</span></span>
-      ${
-        dataAula.comentario
-          ? `<span class="aula-comment">${escapeHTML(dataAula.comentario)}</span>`
-          : ''
-      }
-    </h3>
-    <div class="schedule-list">
-      ${rows.map(row => renderScheduleBlock(row)).join('')}
-    </div>
-  </div>
-`;
+    return `
+      <div class="card">
+        <h3 class="aula-title-bar">
+          <span>Aula <span class="aula-code">${escapeHTML(aula)}</span></span>
+          ${dataAula.comentario ? `<span class="aula-comment">${escapeHTML(dataAula.comentario)}</span>` : ''}
+        </h3>
+        <div class="schedule-list">
+          ${rows.map(row => renderScheduleBlock(row)).join('')}
+        </div>
+      </div>
+    `;
   }).join('');
+
+  const titleContent = hasMultipleDates
+    ? `
+      <button class="date-grid-toggle" type="button" data-toggle-date="${escapeHTML(dateInfo.key)}" aria-expanded="${open ? 'true' : 'false'}">
+        <span>${escapeHTML(title)}</span>
+        <span class="date-grid-toggle-icon" aria-hidden="true">${open ? '−' : '+'}</span>
+      </button>
+    `
+    : `<span class="section-band-content">${escapeHTML(title)}</span>`;
+
+  return `
+    <div class="date-grid-group ${open ? 'is-open' : 'is-collapsed'}" id="grilla-${escapeHTML(dateInfo.key)}">
+      <h2 class="section-band date-grid-title">${titleContent}</h2>
+      <div class="tables date-grid-content" ${open ? '' : 'hidden'}>
+        ${content}
+      </div>
+    </div>
+  `;
+}
+
+function ensureDateOpenState(key) {
+  if (Object.prototype.hasOwnProperty.call(app.dateOpenState, key)) return;
+  app.dateOpenState[key] = shouldDateGridStartOpen(key);
+}
+
+function isDateGridOpen(key) {
+  ensureDateOpenState(key);
+  return app.dateOpenState[key] !== false;
+}
+
+function shouldDateGridStartOpen(key) {
+  const lastGlobalBlock = getLastBlockDateTime();
+  if (lastGlobalBlock && new Date() > lastGlobalBlock) return true;
+
+  const activeOrNext = nextActiveOrFutureAgendaDate();
+  if (activeOrNext) return activeOrNext.key === key;
+
+  return agendaDates()[0]?.key === key;
 }
 
 function renderScheduleBlock(row) {
   const isNow = isRowNow(row);
+  const isPast = isRowPast(row);
 
   return `
-    <div class="schedule-block ${isNow ? 'is-now' : ''}">
+    <div class="schedule-block ${isNow ? 'is-now' : ''} ${isPast ? 'is-past' : ''}">
       <div class="block-title">
-        <span class="block-title-label">Bloque</span>
-        <span aria-hidden="true">🕒</span>
-        <span class="block-title-time">${blockLabelHTML(row)}</span>
+        <div class="block-title-main">
+          <span class="block-title-label">Bloque</span>
+          <span aria-hidden="true">🕒</span>
+          <span class="block-title-time">${blockLabelHTML(row)}</span>
+        </div>
+        ${isPast ? `<span class="done-check" aria-label="Bloque realizado">✓</span>` : ''}
       </div>
 
       <div class="block-body">
@@ -732,31 +909,11 @@ function renderMySection() {
   const nowAction = currentActionForTeam(app.selectedTeam);
   const nextAction = nextActionForTeam(app.selectedTeam);
 
-  document.getElementById('my-now').innerHTML = renderMyNow(nowAction, nextAction);
-
-  const fullAgenda = app.allBlocks.map(block => {
-    const action = actions.find(action =>
-      action.horaInicio === block.horaInicio &&
-      action.horaCierre === block.horaCierre
-    );
-
-    if (action) return action;
-
-    return {
-      horaInicio: block.horaInicio,
-      horaCierre: block.horaCierre,
-      aula: '',
-      rol: 'Break',
-      detalle: ''
-    };
-  });
-
-  document.getElementById('my-agenda').innerHTML = fullAgenda
-    .map(item => renderAction(item))
-    .join('');
+  document.getElementById('my-now').innerHTML = renderMyNow(nowAction, nextAction, actions);
+  document.getElementById('my-agenda').innerHTML = renderMyAgenda(actions);
 }
 
-function renderMyNow(nowAction, nextAction) {
+function renderMyNow(nowAction, nextAction, actions = []) {
   const myTeam = teamLabel(app.selectedTeam, false);
 
   if (nowAction) {
@@ -767,76 +924,126 @@ function renderMyNow(nowAction, nextAction) {
       <div class="eyebrow">Ahora · ${myTeam}</div>
       <div class="big">Aula ${escapeHTML(nowAction.aula)} · ${escapeHTML(rolTexto)}</div>
       <div class="sub">
-        ${isFeedback
-          ? `<strong>${escapeHTML(nowAction.detalle)}</strong>`
-          : 'Tu equipo y vos ponen a prueba el prototipo'
-        }
+        ${isFeedback ? `<strong>${escapeHTML(nowAction.detalle)}</strong>` : 'Tu equipo y vos ponen a prueba el prototipo'}
       </div>
     `;
   }
 
   if (nextAction) {
-    const isFeedback = nextAction.rol === 'Das feedback';
-    const rolTexto = isFeedback ? 'Das feedback a' : 'Testeás';
+    const isToday = nextAction.fechaKey === currentDateKey();
+
+    if (isToday) {
+      const isFeedback = nextAction.rol === 'Das feedback';
+      const rolTexto = isFeedback ? 'Das feedback a' : 'Testeás';
+
+      return `
+        <div class="eyebrow">Ahora tenés break ☕ · ${myTeam}</div>
+        <div class="next-block-label">Próximo bloque</div>
+        <div class="big">⏭️ ${escapeHTML(blockLabel(nextAction))} · Aula ${escapeHTML(nextAction.aula)}</div>
+        <div class="sub">
+          ${isFeedback ? `👈 ${escapeHTML(rolTexto)} <strong>${escapeHTML(nextAction.detalle)}</strong>` : `📱 ${escapeHTML(rolTexto)}`}
+        </div>
+      `;
+    }
 
     return `
-      <div class="eyebrow">Ahora tenés break ☕ · ${myTeam}</div>
-      <div class="next-block-label">Próximo bloque</div>
-      <div class="big">⏭️ ${escapeHTML(blockLabel(nextAction))} · Aula ${escapeHTML(nextAction.aula)}</div>
-      <div class="sub">
-        ${isFeedback
-          ? `👈 ${escapeHTML(rolTexto)} <strong>${escapeHTML(nextAction.detalle)}</strong>`
-          : `📱 ${escapeHTML(rolTexto)}`
-        }
-      </div>
+      <div class="eyebrow">${myTeam}</div>
+      <div class="big">Todavía no llegó tu fecha de testeo</div>
+      <div class="sub">${escapeHTML(formatTimeUntil(nextAction.startDateTime))}</div>
     `;
   }
 
-const status = testDateStatus();
+  if (actions.length && actions.every(action => isActionPast(action))) {
+    return `
+      <div class="eyebrow">${myTeam}</div>
+      <div class="big">Ya no tenés más bloques pendientes</div>
+    `;
+  }
 
-if (status === 'future') {
-  const firstBlockDateTime = getFirstBlockDateTime();
-  const title = isTestDateToday()
-    ? 'Todavía no empezó el primer bloque'
-    : 'Todavía no llegó el día de los testeos';
+  const nextGlobal = getNextGlobalBlockDateTime();
+  if (nextGlobal) {
+    return `
+      <div class="eyebrow">${myTeam}</div>
+      <div class="big">Todavía no empezó el primer bloque</div>
+      <div class="sub">${escapeHTML(formatTimeUntil(nextGlobal))}</div>
+    `;
+  }
+
+  if (testDateStatus() === 'past') {
+    return `
+      <div class="eyebrow">${myTeam}</div>
+      <div class="big">La clase de testeos ya terminó</div>
+    `;
+  }
 
   return `
     <div class="eyebrow">${myTeam}</div>
-    <div class="big">${title}</div>
-    <div class="sub">${escapeHTML(formatTimeUntil(firstBlockDateTime))}</div>
+    <div class="big">No hay bloques asignados para este equipo</div>
   `;
 }
 
-if (status === 'past') {
-  return `
-    <div class="eyebrow">${myTeam}</div>
-    <div class="big">La clase de testeos ya terminó</div>
-  `;
-}
+function renderMyAgenda(actions) {
+  if (!actions.length) return `<div class="agenda-item">No hay bloques cargados para este equipo.</div>`;
 
-return `
-  <div class="eyebrow">${myTeam}</div>
-  <div class="big">Ya no tenés más bloques pendientes</div>
-`;
+  const actionDateKeys = uniqueValues(actions.map(action => action.fechaKey));
+  const blocks = app.allBlocks.filter(block => actionDateKeys.includes(block.fechaKey));
+
+  const items = blocks.map(block => {
+    const action = actions.find(action =>
+      action.fechaKey === block.fechaKey &&
+      action.horaInicio === block.horaInicio &&
+      action.horaCierre === block.horaCierre
+    );
+
+    if (action) return action;
+
+    return {
+      fecha: block.fecha,
+      fechaKey: block.fechaKey,
+      horaInicio: block.horaInicio,
+      horaCierre: block.horaCierre,
+      startDateTime: blockDateTime(block, 'inicio'),
+      endDateTime: blockDateTime(block, 'cierre'),
+      aula: '',
+      rol: 'Break',
+      detalle: ''
+    };
+  });
+
+  let lastDateKey = '';
+
+  return items.map(item => {
+    const dateHeading = item.fechaKey !== lastDateKey
+      ? `<div class="agenda-date-heading">${escapeHTML(formatDateWithWeekday(dateFromKey(item.fechaKey), { capitalizeFirstWord: true }))}</div>`
+      : '';
+    lastDateKey = item.fechaKey;
+    return dateHeading + renderAction(item);
+  }).join('');
 }
 
 function renderAction(action) {
   const now = isActionNow(action);
+  const past = isActionPast(action);
   const isFeedback = action.rol === 'Das feedback';
   const isBreak = action.rol === 'Break';
 
   if (isBreak) {
     return `
-      <div class="agenda-item ${now ? 'now' : ''} is-break">
-        <div class="agenda-main">☕ ${escapeHTML(blockLabel(action))} · Break</div>
+      <div class="agenda-item ${now ? 'now' : ''} ${past ? 'is-past' : ''} is-break">
+        <div class="agenda-main-row">
+          <div class="agenda-main">☕ ${escapeHTML(blockLabel(action))} · Break</div>
+          ${past ? `<span class="done-check" aria-label="Bloque realizado">✓</span>` : ''}
+        </div>
       </div>
     `;
   }
 
+  const main = `<div class="agenda-main-row"><div class="agenda-main">🕒 ${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>${past ? `<span class="done-check" aria-label="Bloque realizado">✓</span>` : ''}</div>`;
+
   if (isFeedback) {
     return `
-      <div class="agenda-item ${now ? 'now' : ''}">
-        <div class="agenda-main">🕒 ${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>
+      <div class="agenda-item ${now ? 'now' : ''} ${past ? 'is-past' : ''}">
+        ${main}
         <div class="agenda-action-row">
           <span class="agenda-action-emoji">👈</span>
           <span class="agenda-action-content">
@@ -849,8 +1056,8 @@ function renderAction(action) {
   }
 
   return `
-    <div class="agenda-item ${now ? 'now' : ''}">
-      <div class="agenda-main">🕒 ${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>
+    <div class="agenda-item ${now ? 'now' : ''} ${past ? 'is-past' : ''}">
+      ${main}
       <div class="agenda-action-row">
         <span class="agenda-action-emoji">📱</span>
         <span class="agenda-action-content">
@@ -861,6 +1068,7 @@ function renderAction(action) {
     </div>
   `;
 }
+
 function renderTexts() {
   const box = document.getElementById('texts');
 
@@ -884,10 +1092,17 @@ function myActions(teamId) {
   const actions = [];
 
   app.agenda.forEach(row => {
+    const startDateTime = rowDateTime(row, 'inicio');
+    const endDateTime = rowDateTime(row, 'cierre');
+
     if (row.testea === teamId) {
       actions.push({
+        fecha: row.fecha,
+        fechaKey: row.fechaKey,
         horaInicio: row.horaInicio,
         horaCierre: row.horaCierre,
+        startDateTime,
+        endDateTime,
         aula: row.aula,
         rol: 'Testeás',
         detalle: 'Tu equipo y vos ponen a prueba el prototipo'
@@ -896,8 +1111,12 @@ function myActions(teamId) {
 
     if (row.feedbacks.includes(teamId)) {
       actions.push({
+        fecha: row.fecha,
+        fechaKey: row.fechaKey,
         horaInicio: row.horaInicio,
         horaCierre: row.horaCierre,
+        startDateTime,
+        endDateTime,
         aula: row.aula,
         rol: 'Das feedback',
         detalle: plainTeamLabel(row.testea)
@@ -905,41 +1124,48 @@ function myActions(teamId) {
     }
   });
 
-  return actions.sort((a, b) => timeToMin(a.horaInicio) - timeToMin(b.horaInicio));
+  return actions.sort((a, b) => {
+    const byDate = String(a.fechaKey).localeCompare(String(b.fechaKey));
+    if (byDate !== 0) return byDate;
+    return timeToMin(a.horaInicio) - timeToMin(b.horaInicio);
+  });
 }
-function currentActionForTeam(teamId) {
-  if (!isTestDateToday()) return null;
 
+function currentActionForTeam(teamId) {
   return myActions(teamId).find(action => isActionNow(action)) || null;
 }
 
 function nextActionForTeam(teamId) {
-  if (!isTestDateToday()) return null;
-
-  const nowMin = currentMinutes();
-
-  return myActions(teamId).find(action =>
-    timeToMin(action.horaInicio) > nowMin
-  ) || null;
+  const now = new Date();
+  return myActions(teamId).find(action => action.startDateTime && action.startDateTime > now) || null;
 }
 
 function currentRows() {
-  if (!isTestDateToday()) return [];
-
   return app.agenda
     .filter(row => isRowNow(row))
     .sort((a, b) => app.aulaOrder.indexOf(a.aula) - app.aulaOrder.indexOf(b.aula));
 }
 
-    function isRowNow(row) {
-      const now = currentMinutes();
-      return now >= timeToMin(row.horaInicio) && now < timeToMin(row.horaCierre);
-    }
+function isRowNow(row) {
+  const start = rowDateTime(row, 'inicio');
+  const end = rowDateTime(row, 'cierre');
+  const now = new Date();
+  return Boolean(start && end && now >= start && now < end);
+}
 
-    function isActionNow(action) {
-      const now = currentMinutes();
-      return now >= timeToMin(action.horaInicio) && now < timeToMin(action.horaCierre);
-    }
+function isRowPast(row) {
+  const end = rowDateTime(row, 'cierre');
+  return Boolean(end && new Date() > end);
+}
+
+function isActionNow(action) {
+  const now = new Date();
+  return Boolean(action.startDateTime && action.endDateTime && now >= action.startDateTime && now < action.endDateTime);
+}
+
+function isActionPast(action) {
+  return Boolean(action.endDateTime && new Date() > action.endDateTime);
+}
 
     function currentMinutes() {
       const forced = new URLSearchParams(window.location.search).get('t');
@@ -974,43 +1200,52 @@ function blockLabelHTML(item) {
   `;
 }
 
-    function uniqueBlocks(agenda) {
-      const blocks = [];
+function uniqueBlocks(agenda) {
+  const blocks = [];
 
-      agenda.forEach(row => {
-        const exists = blocks.some(block =>
-          block.horaInicio === row.horaInicio &&
-          block.horaCierre === row.horaCierre
-        );
+  agenda.forEach(row => {
+    const exists = blocks.some(block =>
+      block.fechaKey === row.fechaKey &&
+      block.horaInicio === row.horaInicio &&
+      block.horaCierre === row.horaCierre
+    );
 
-        if (!exists) {
-          blocks.push({
-            horaInicio: row.horaInicio,
-            horaCierre: row.horaCierre
-          });
-        }
-      });
-
-      return blocks.sort((a, b) => timeToMin(a.horaInicio) - timeToMin(b.horaInicio));
-    }
-
-    function inferMissingEndTimes() {
-      const starts = [...new Set(app.agenda.map(row => row.horaInicio))]
-        .sort((a, b) => timeToMin(a) - timeToMin(b));
-
-      app.agenda.forEach(row => {
-        if (row.horaCierre) return;
-
-        const currentIndex = starts.indexOf(row.horaInicio);
-        const nextStart = starts[currentIndex + 1];
-
-        if (nextStart) {
-          row.horaCierre = nextStart;
-        } else {
-          row.horaCierre = minToTime(timeToMin(row.horaInicio) + 35);
-        }
+    if (!exists) {
+      blocks.push({
+        fecha: row.fecha,
+        fechaKey: row.fechaKey,
+        horaInicio: row.horaInicio,
+        horaCierre: row.horaCierre
       });
     }
+  });
+
+  return blocks.sort((a, b) => {
+    const byDate = String(a.fechaKey).localeCompare(String(b.fechaKey));
+    if (byDate !== 0) return byDate;
+    return timeToMin(a.horaInicio) - timeToMin(b.horaInicio);
+  });
+}
+
+function inferMissingEndTimes() {
+  const startsByDate = new Map();
+
+  app.agenda.forEach(row => {
+    if (!startsByDate.has(row.fechaKey)) startsByDate.set(row.fechaKey, []);
+    const starts = startsByDate.get(row.fechaKey);
+    if (!starts.includes(row.horaInicio)) starts.push(row.horaInicio);
+  });
+
+  startsByDate.forEach(starts => starts.sort((a, b) => timeToMin(a) - timeToMin(b)));
+
+  app.agenda.forEach(row => {
+    if (row.horaCierre) return;
+    const starts = startsByDate.get(row.fechaKey) || [];
+    const currentIndex = starts.indexOf(row.horaInicio);
+    const nextStart = starts[currentIndex + 1];
+    row.horaCierre = nextStart || minToTime(timeToMin(row.horaInicio) + 35);
+  });
+}
 
     function minToTime(totalMinutes) {
       const h = Math.floor(totalMinutes / 60);
@@ -1091,13 +1326,10 @@ function isSelectedTeam(id) {
 
 function currentClockLabel() {
   const d = new Date();
-
   const hour = String(d.getHours()).padStart(2, '0');
   const minutes = String(d.getMinutes()).padStart(2, '0');
 
-  if (isTestDateToday()) {
-    return `${hour}:${minutes}`;
-  }
+  if (isAnyAgendaDateToday()) return `${hour}:${minutes}`;
 
   return formatTodayWithWeekdayAndTime();
 }
@@ -1393,34 +1625,31 @@ function closeQrLightbox() {
 }
 
 function setupSectionSpy() {
-  const links = Array.from(document.querySelectorAll('[data-section-link]'));
-
   function getTarget(id) {
-    if (id === 'mi-equipo') {
-      return document.getElementById('my-section');
-    }
-
+    if (id === 'mi-equipo') return document.getElementById('my-section');
     return document.getElementById(id);
   }
 
-  const sectionMap = links
-    .map(link => {
-      const id = link.getAttribute('data-section-link');
-      const section = getTarget(id);
-      return { id, link, section };
-    })
-    .filter(item => item.section);
-
-  if (!sectionMap.length) return;
+  function currentSectionMap() {
+    return Array.from(document.querySelectorAll('[data-section-link]'))
+      .map(link => {
+        const id = link.getAttribute('data-section-link');
+        const section = getTarget(id);
+        return { id, link, section };
+      })
+      .filter(item => item.section);
+  }
 
   function updateActiveByScroll() {
+    const sectionMap = currentSectionMap();
+    if (!sectionMap.length) return;
+
     const header = document.querySelector('.site-header');
     const headerHeight = header ? header.offsetHeight : 0;
     const markerY = window.scrollY + headerHeight + 90;
 
     const visibleSections = sectionMap.filter(item => {
       if (!item.section || item.section.offsetParent === null) return false;
-
       const top = item.section.offsetTop;
       const bottom = top + item.section.offsetHeight;
       return markerY >= top && markerY < bottom;
@@ -1430,9 +1659,7 @@ function setupSectionSpy() {
       return item.section && item.section.offsetParent !== null;
     });
 
-    if (activeItem) {
-      setActiveMenuLink(activeItem.id);
-    }
+    if (activeItem) setActiveMenuLink(activeItem.id);
   }
 
   updateActiveByScroll();
