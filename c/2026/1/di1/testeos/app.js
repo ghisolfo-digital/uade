@@ -1755,7 +1755,7 @@ function updateQrData() {
   const forceStatic = String(cuestionario.forzar_url_qr || '').trim().toUpperCase() === 'TRUE';
   const automaticSources = cuestionarioUrl
     ? [
-        `https://api.qrserver.com/v1/create-qr-code/?size=900x900&qzone=14&margin=14&ecc=L&data=${encodeURIComponent(cuestionarioUrl)}`,
+        `https://api.qrserver.com/v1/create-qr-code/?size=900x900&qzone=2&margin=4&ecc=L&data=${encodeURIComponent(cuestionarioUrl)}`,
         `https://quickchart.io/qr?text=${encodeURIComponent(cuestionarioUrl)}&size=900&margin=14&ecLevel=L`
       ]
     : [];
