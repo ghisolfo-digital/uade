@@ -336,6 +336,84 @@ function formatDateWithWeekday(value) {
 
   return `${weekdays[date.getDay()]} ${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
 }
+
+function getFirstBlockDateTime() {
+  const testDate = getTestDate();
+  if (!testDate || !app.allBlocks.length) return null;
+
+  const firstBlock = app.allBlocks[0];
+  const minutes = timeToMin(firstBlock.horaInicio);
+
+  const date = new Date(testDate);
+  date.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
+
+  return date;
+}
+
+function getLastBlockDateTime() {
+  const testDate = getTestDate();
+  if (!testDate || !app.allBlocks.length) return null;
+
+  const lastBlock = app.allBlocks[app.allBlocks.length - 1];
+  const minutes = timeToMin(lastBlock.horaCierre);
+
+  const date = new Date(testDate);
+  date.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
+
+  return date;
+}
+
+function formatTimeUntil(targetDate) {
+  const now = new Date();
+  const diffMs = targetDate - now;
+
+  if (diffMs <= 0) return '';
+
+  const totalMinutes = Math.ceil(diffMs / 60000);
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+
+  if (days > 1) {
+    return `Faltan ${days} días para la clase de testeos.`;
+  }
+
+  if (days === 1) {
+    return `Falta 1 día para la clase de testeos.`;
+  }
+
+  if (hours > 1) {
+    return `Faltan ${hours} horas para el primer bloque.`;
+  }
+
+  if (hours === 1) {
+    return `Falta 1 hora para el primer bloque.`;
+  }
+
+  if (minutes > 1) {
+    return `Faltan ${minutes} minutos para el primer bloque.`;
+  }
+
+  return `Falta menos de 1 minuto para el primer bloque.`;
+}
+
+function testDateStatus() {
+  const firstBlockDateTime = getFirstBlockDateTime();
+  const lastBlockDateTime = getLastBlockDateTime();
+
+  if (!firstBlockDateTime || !lastBlockDateTime) {
+    return 'unknown';
+  }
+
+  const now = new Date();
+
+  if (now < firstBlockDateTime) return 'future';
+  if (now > lastBlockDateTime) return 'past';
+
+  return 'active-day';
+}
+
+
 function getTestDate() {
   const raw = String(app.config.fecha || '').trim();
   const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -683,10 +761,29 @@ function renderMyNow(nowAction, nextAction) {
     `;
   }
 
+const status = testDateStatus();
+
+if (status === 'future') {
+  const firstBlockDateTime = getFirstBlockDateTime();
+
   return `
     <div class="eyebrow">${myTeam}</div>
-    <div class="big">Ya no tenés más bloques pendientes</div>
+    <div class="big">Todavía no empezó la clase de testeos</div>
+    <div class="sub">${escapeHTML(formatTimeUntil(firstBlockDateTime))}</div>
   `;
+}
+
+if (status === 'past') {
+  return `
+    <div class="eyebrow">${myTeam}</div>
+    <div class="big">La clase de testeos ya terminó</div>
+  `;
+}
+
+return `
+  <div class="eyebrow">${myTeam}</div>
+  <div class="big">Ya no tenés más bloques pendientes</div>
+`;
 }
 
 function renderAction(action) {
