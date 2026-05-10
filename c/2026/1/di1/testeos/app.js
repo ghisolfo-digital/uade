@@ -180,13 +180,14 @@ function randomBetween(min, max) {
     }
 
     if (tipo === 'aulas') {
-      app.aulas.set(a, {
-        aula: a,
-        ubicacion: b,
-        comentario: c
-      });
-    }
-
+  app.aulas.set(a, {
+    id_aula: a,
+    nro_aula: b,
+    nombre_aula: c,
+    ubicacion: d,
+    comentario: e
+  });
+}
     if (tipo === 'agenda') {
       const fecha = a;
       const fechaObj = parseDateValue(fecha);
@@ -1015,7 +1016,7 @@ function renderCurrentStatus() {
     return `
       <div class="card status-card ${selectedIsHere ? 'current-for-team' : ''}">
 <div class="eyebrow status-eyebrow">
-  <span>Aula <span class="aula-code">${escapeHTML(row.aula)}</span> · ${blockLabelHTML(row)}</span>
+  <span><span class="aula-code">${escapeHTML(aulaLabel(row.aula))}</span> · ${blockLabelHTML(row)}</span>
   <span class="live-badge status-live-badge" aria-label="Bloque en vivo"><span class="live-badge-dot">🔴</span><span class="live-badge-text">Ahora</span></span>
 </div>
 
@@ -1073,7 +1074,7 @@ function renderDateGridGroup(dateInfo, hasMultipleDates) {
     return `
       <div class="card">
         <h3 class="aula-title-bar">
-          <span>Aula <span class="aula-code">${escapeHTML(aula)}</span></span>
+          <span><span class="aula-code">${escapeHTML(aulaLabel(aula))}</span></span>
           ${dataAula.comentario ? `<span class="aula-comment">${escapeHTML(dataAula.comentario)}</span>` : ''}
         </h3>
         <div class="schedule-list">
@@ -1223,7 +1224,7 @@ function renderMyNow(nowAction, nextAction, actions = []) {
 
     return `
       <div class="eyebrow">Ahora · ${myTeam}</div>
-      <div class="big">Aula ${escapeHTML(nowAction.aula)} · ${escapeHTML(rolTexto)}</div>
+      <div class="big">${escapeHTML(aulaLabel(nowAction.aula))} · ${escapeHTML(rolTexto)}</div>
       <div class="sub">
         ${isFeedback ? `<strong>${escapeHTML(nowAction.detalle)}</strong>` : `${escapeHTML(teamName(app.selectedTeam))} pone a prueba el prototipo`}
       </div>
@@ -1238,7 +1239,7 @@ function renderMyNow(nowAction, nextAction, actions = []) {
       const isBreak = nextAction.rol === 'Break';
       const isUndefined = nextAction.rol === 'Actividad a definir';
       const rolTexto = isFeedback ? 'Das feedback a' : nextAction.rol;
-      const nextPlace = nextAction.aula ? ` · Aula ${escapeHTML(nextAction.aula)}` : '';
+      const nextPlace = nextAction.aula ? ` · ${escapeHTML(aulaLabel(nextAction.aula))}` : '';
 
       return `
         <div class="eyebrow">Ahora tenés break ☕ · ${myTeam}</div>
@@ -1385,7 +1386,7 @@ function renderAction(action) {
     `;
   }
 
-  const main = `<div class="agenda-main-row"><div class="agenda-main">🕒 ${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>${now ? `<span class="live-badge agenda-live-badge" aria-label="Bloque en vivo"><span class="live-badge-dot">🔴</span><span class="live-badge-text">Ahora</span></span>` : ''}${past ? `<span class="done-check" aria-label="Bloque realizado">✓</span>` : ''}</div>`;
+  const main = `<div class="agenda-main-row"><div class="agenda-main">🕒 ${escapeHTML(blockLabel(action))} · ${escapeHTML(aulaLabel(action.aula))}</div>${now ? `<span class="live-badge agenda-live-badge" aria-label="Bloque en vivo"><span class="live-badge-dot">🔴</span><span class="live-badge-text">Ahora</span></span>` : ''}${past ? `<span class="done-check" aria-label="Bloque realizado">✓</span>` : ''}</div>`;
 
   if (isFeedback) {
     return `
@@ -1641,12 +1642,25 @@ function teamData(id) {
   };
 }
 
-function aulaData(aula) {
-  return app.aulas.get(String(aula)) || {
-    aula,
+function aulaData(idAula) {
+  return app.aulas.get(String(idAula)) || {
+    id_aula: idAula,
+    nro_aula: idAula,
+    nombre_aula: '',
     ubicacion: '',
     comentario: ''
   };
+}
+
+function aulaLabel(idAula) {
+  const data = aulaData(idAula);
+  const nombre = String(data.nombre_aula || '').trim();
+  const numero = String(data.nro_aula || '').trim();
+
+  if (nombre) return nombre;
+  if (numero) return `Aula ${numero}`;
+
+  return `Aula ${idAula}`;
 }
 
 function teamNumber(id) {
