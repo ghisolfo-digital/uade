@@ -765,10 +765,13 @@ const status = testDateStatus();
 
 if (status === 'future') {
   const firstBlockDateTime = getFirstBlockDateTime();
+  const title = isTestDateToday()
+    ? 'Todavía no empezó el primer bloque'
+    : 'Todavía no llegó el día de los testeos';
 
   return `
     <div class="eyebrow">${myTeam}</div>
-    <div class="big">Todavía no empezó la clase de testeos</div>
+    <div class="big">${title}</div>
     <div class="sub">${escapeHTML(formatTimeUntil(firstBlockDateTime))}</div>
   `;
 }
