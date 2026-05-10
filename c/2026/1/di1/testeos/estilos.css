@@ -1608,97 +1608,244 @@ gap: 4px;
   .done-check { width: 26px; height: 26px; font-size: 1rem; }
 }
 
-
-/* ================= AJUSTES FINALES: STICKY, SIMULACIÓN, QR, BACK TO TOP ================= */
-
-html {
-  overflow-x: hidden;
-}
-
-body {
-  max-width: 100%;
-}
+/* ================= AJUSTES FINALES: HEADER / PLEGABLES / ESTADOS ================= */
 
 .site-header {
-  position: sticky !important;
+  position: sticky;
   top: 0;
 }
 
-.section-band,
-.selected-team-bar {
-  width: auto;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+.header-top {
+  align-items: start;
 }
 
-.selected-team-inner {
-  flex-wrap: wrap;
-  row-gap: 6px;
+.header-actions {
+  align-self: start;
+  padding-top: 0;
+}
+
+/* Hover de barras negras plegables: ocupa todo el ancho y todo el alto */
+.date-grid-title.section-band {
+  padding: 0;
+}
+
+.date-grid-toggle {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding: 9px 0;
+  border-radius: 0;
+  transition: background-color .18s ease;
+}
+
+.date-grid-toggle-inner {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.date-grid-toggle:hover,
+.date-grid-toggle:focus-visible {
+  background: rgba(255,255,255,.18);
+  outline: 0;
+}
+
+.date-grid-toggle-icon,
+.my-date-toggle-icon {
+  font-weight: 300;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+/* Tarjetas de Mi equipo por fecha */
+.my-date-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.my-date-toggle {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  color: var(--text);
+  padding: 13px 14px;
+  font-family: var(--ff-kreon);
+  font-size: 1.12rem;
+  line-height: 1.1;
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+}
+
+.my-date-toggle:hover,
+.my-date-toggle:focus-visible {
+  background: #f4f7f1;
+  outline: 0;
+}
+
+.my-date-content {
+  display: grid;
+  gap: 10px;
+  padding: 0 14px 14px;
+}
+
+.my-date-content[hidden] {
+  display: none;
+}
+
+/* Estado actual en vivo */
+.live-badge {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #b00020;
+  font-size: .78rem;
+  line-height: 1;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.live-badge-dot {
+  display: inline-block;
+  animation: livePulse 1.1s infinite ease-in-out;
+  filter: drop-shadow(0 0 5px rgba(176,0,32,.55));
+}
+
+.live-badge-text {
+  color: #b00020;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: .42; transform: scale(.9); }
+  50% { opacity: 1; transform: scale(1.16); }
+}
+
+/* Check de realizados: visible, con sombra y sin forzar altura */
+.block-title,
+.agenda-main-row {
+  position: relative;
+}
+
+.done-check {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  box-shadow: 0 5px 14px rgba(46,125,50,.45), 0 0 0 2px rgba(255,255,255,.9);
+}
+
+.block-title-main,
+.agenda-main {
+  padding-right: 36px;
+}
+
+/* Pasados más claros y con menos contraste */
+.schedule-block.is-past {
+  background: #f8f9f7;
+  border-color: #e2e6df;
+  color: #9aa199;
+}
+
+.schedule-block.is-past .block-title {
+  background: #eef1ed;
+}
+
+.schedule-block.is-past .block-title-time,
+.schedule-block.is-past .test-team,
+.schedule-block.is-past .team-main,
+.schedule-block.is-past .test-topic,
+.schedule-block.is-past .role-label,
+.schedule-block.is-past .feedback-row,
+.schedule-block.is-past .row-emoji,
+.schedule-block.is-past .block-title-label {
+  color: #a0a69d;
+}
+
+.schedule-block.is-past .block-title-main,
+.schedule-block.is-past .block-body {
+  text-decoration-color: rgba(130,135,128,.45);
+}
+
+.agenda-item.is-past {
+  background: #f8f9f7;
+  border-color: #e2e6df;
+  color: #9da49b;
+}
+
+.agenda-item.is-past .agenda-main,
+.agenda-item.is-past .agenda-action-row,
+.agenda-item.is-past .sub,
+.agenda-item.is-past strong {
+  color: #a0a69d;
+}
+
+.agenda-item.is-past .agenda-main,
+.agenda-item.is-past .agenda-action-row {
+  text-decoration-color: rgba(130,135,128,.45);
+}
+
+@media (max-width: 640px) {
+  .site-header .meta {
+    display: grid;
+    gap: 1px;
+  }
+
+  .site-header .meta .meta-separator {
+    display: none;
+  }
+
+  .site-header .meta .meta-part {
+    display: block;
+  }
+
+  .date-grid-toggle {
+    font-size: 1.22rem;
+  }
+
+  .header-actions {
+    align-self: start;
+  }
+}
+
+/* ================= AJUSTES EXTRA: SIMULACIÓN / QR / VOLVER ARRIBA ================= */
+
+.selected-team-prefix::before {
+  content: "👀 ";
 }
 
 .selected-team-prefix,
-.simulation-prefix {
+.simulation-prefix,
+.simulation-plain,
+.selected-team-separator {
   color: rgba(255,255,255,.78);
   font-size: .82rem;
   line-height: 1;
   font-weight: 400;
 }
 
-.selected-team-prefix::after,
-.simulation-prefix::after {
-  content: ":";
-}
-
 .simulation-prefix {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-left: 6px;
+  white-space: nowrap;
 }
 
-.simulation-prefix .simulation-icon {
-  font-size: .98rem;
-  line-height: 1;
+.simulation-pill {
+  background: #e8f2ea;
+  color: #123f1d;
 }
 
 .simulation-plain {
-  color: rgba(255,255,255,.82);
-  font-size: .82rem;
-  line-height: 1;
-  font-weight: 400;
-}
-
-.simulation-chip {
-  width: auto;
-  min-height: 24px;
-  border: 1px solid rgba(255,255,255,.45);
-  border-radius: 999px;
-  padding: 4px 7px 4px 9px;
-  background: rgba(255,255,255,.14);
-  color: #fff;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: .82rem;
-  line-height: 1;
-  font-weight: 700;
   white-space: nowrap;
-  cursor: pointer;
-  transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
-}
-
-.simulation-chip:hover,
-.simulation-chip:focus-visible {
-  background: #ffffff;
-  color: #b00020;
-  border-color: #b00020;
-  box-shadow: 0 2px 8px rgba(176,0,32,.18);
-}
-
-.simulation-chip i {
-  font-size: 14px;
-  line-height: 1;
-  opacity: .9;
 }
 
 .qr-image-wrap {
@@ -1711,15 +1858,15 @@ body {
   line-height: 1.3;
 }
 
-.qr-copy-btn {
+.qr-copy-link {
   width: auto;
-  margin: 12px auto 0;
   min-height: 38px;
-  border-radius: 12px;
+  margin: 12px auto 0;
   padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(27,94,32,.25);
   background: var(--green-dark);
   color: #fff;
-  border-color: var(--green-dark);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1729,81 +1876,26 @@ body {
   font-weight: 800;
 }
 
-.qr-copy-btn:hover,
-.qr-copy-btn:focus-visible {
+.qr-copy-link:hover,
+.qr-copy-link:focus-visible {
   background: #124116;
+  outline: 0;
 }
 
-.done-check {
-  position: relative;
-  z-index: 2;
-  box-shadow:
-    0 0 0 3px rgba(255,255,255,.75),
-    0 4px 14px rgba(46,125,50,.55),
-    0 2px 6px rgba(0,0,0,.22);
+.qr-copy-link.copied {
+  background: #2e7d32;
 }
 
-.schedule-block.is-past .block-title {
-  position: relative;
-  overflow: visible;
-}
-
-.schedule-block.is-past .block-title .done-check {
-  margin-top: -4px;
-  margin-bottom: -8px;
-}
-
-.schedule-block.is-past,
-.agenda-item.is-past {
-  background: #f8f9f7;
-  border-color: #e3e8df;
-  color: #a0a79e;
-}
-
-.schedule-block.is-past .block-title {
-  background: #eef1ec;
-}
-
-.schedule-block.is-past .block-title-time,
-.schedule-block.is-past .test-team,
-.schedule-block.is-past .team-main,
-.schedule-block.is-past .test-topic,
-.schedule-block.is-past .role-label,
-.schedule-block.is-past .feedback-row,
-.schedule-block.is-past .row-emoji,
-.agenda-item.is-past .agenda-main,
-.agenda-item.is-past .agenda-action-row,
-.agenda-item.is-past .sub,
-.agenda-item.is-past strong {
-  color: #a0a79e;
-}
-
-.schedule-block.is-past .block-title-main,
-.schedule-block.is-past .block-body,
-.agenda-item.is-past .agenda-main,
-.agenda-item.is-past .agenda-action-row {
-  text-decoration-color: rgba(145,150,143,.45);
-}
-
-.agenda-item.is-past .agenda-main-row {
-  min-height: 28px;
-}
-
-.agenda-item.is-past .done-check {
-  margin-top: -3px;
-  margin-bottom: -3px;
-}
-
-.back-to-top {
+.back-to-top-button {
   position: fixed;
   right: 18px;
   bottom: calc(var(--footer-h) + 18px);
-  z-index: 3000;
-  width: 44px;
-  height: 44px;
+  z-index: 1100;
+  width: 42px;
+  height: 42px;
   padding: 0;
+  border: 1px solid rgba(255,255,255,.65);
   border-radius: 999px;
-  border: 1px solid rgba(0,0,0,.18);
   background: #111;
   color: #fff;
   box-shadow: 0 8px 22px rgba(0,0,0,.28);
@@ -1816,58 +1908,30 @@ body {
   transition: opacity .18s ease, transform .18s ease, background-color .18s ease;
 }
 
-.back-to-top.is-visible {
+.back-to-top-button.is-visible {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
 }
 
-.back-to-top:hover,
-.back-to-top:focus-visible {
+.back-to-top-button:hover,
+.back-to-top-button:focus-visible {
   background: var(--green-dark);
+  outline: 0;
 }
 
-.back-to-top i {
-  font-size: 22px;
-  line-height: 1;
+.back-to-top-button i {
+  font-size: 21px;
 }
 
 @media (max-width: 640px) {
-  .back-to-top {
+  .selected-team-inner {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .back-to-top-button {
     right: 12px;
     bottom: calc(var(--footer-h) + 12px);
-    width: 40px;
-    height: 40px;
   }
-
-  .simulation-prefix {
-    margin-left: 0;
-  }
-}
-
-/* Ajuste fino del check: visible, con sombra, sin agrandar títulos */
-.schedule-block .block-title {
-  position: relative;
-  padding-right: 46px;
-}
-
-.schedule-block .block-title .done-check {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-38%);
-  margin: 0;
-}
-
-.schedule-block.is-past .block-title .done-check {
-  margin: 0;
-}
-
-.agenda-main-row .done-check {
-  align-self: center;
-}
-
-.qr-copy-btn.is-copied {
-  background: #2e7d32;
-  border-color: #2e7d32;
 }
