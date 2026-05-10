@@ -2152,10 +2152,10 @@ body {
 
 /* ================= MICROAJUSTES: BARRA CONTEXTO / QR ================= */
 
-/* Cuando aparece Estás viendo / Simulando, deja volver el aire inferior dentro del header */
+/* Cuando aparece Estás viendo / Simulando, mantiene aire interno sin dejar franja verde debajo */
 .selected-team-bar {
-  margin-bottom: 0 !important;
   margin-top: 8px;
+  margin-bottom: -12px !important;
 }
 
 .selected-team-inner {
