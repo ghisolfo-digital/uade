@@ -1301,6 +1301,11 @@ gap: 4px;
   object-fit: contain;
 }
 
+.qr-image-wrap img.qr-image-error {
+  min-height: 180px;
+  object-fit: contain;
+}
+
 .qr-help {
   margin: 18px 0 4px;
   color: var(--muted);

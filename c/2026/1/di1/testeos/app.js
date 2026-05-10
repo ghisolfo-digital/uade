@@ -999,8 +999,12 @@ function setupQrLightbox() {
     el.addEventListener('click', closeQrLightbox);
   });
 
+  image.addEventListener('load', () => {
+    image.classList.remove('qr-image-error');
+  });
+
   image.addEventListener('error', () => {
-    image.alt = 'No se pudo cargar el QR. Revisá el enlace de Google Drive.';
+    tryNextQrImageSource(image);
   });
 }
 
@@ -1010,12 +1014,16 @@ function updateQrData() {
   const qrButton = document.getElementById('qr-button');
   const qrUrl = document.getElementById('qr-url');
 
-  const imageUrl = driveUrlToImageUrl(cuestionario.url_qr || '');
+  const imageSources = driveUrlToImageSources(cuestionario.url_qr || '');
   const cuestionarioUrl = String(cuestionario.url || '').trim();
 
   if (image) {
-    image.src = imageUrl;
-    image.hidden = !imageUrl;
+    image.dataset.sources = JSON.stringify(imageSources);
+    image.dataset.sourceIndex = '0';
+    image.classList.remove('qr-image-error');
+    image.alt = 'Código QR para usuarios';
+    image.hidden = !imageSources.length;
+    image.src = imageSources[0] || '';
   }
 
   if (qrUrl) {
@@ -1031,25 +1039,64 @@ function updateQrData() {
   }
 
   if (qrButton) {
-    const enabled = Boolean(imageUrl || cuestionarioUrl);
+    const enabled = Boolean(imageSources.length || cuestionarioUrl);
     qrButton.style.opacity = enabled ? '1' : '.45';
     qrButton.style.pointerEvents = enabled ? 'auto' : 'none';
   }
 }
 
-function driveUrlToImageUrl(url) {
-  const raw = String(url || '').trim();
-  if (!raw) return '';
+function tryNextQrImageSource(image) {
+  let sources = [];
 
-  const fileMatch = raw.match(/\/file\/d\/([^/]+)/);
-  const idMatch = raw.match(/[?&]id=([^&]+)/);
-  const id = fileMatch?.[1] || idMatch?.[1] || '';
-
-  if (id) {
-    return `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=view`;
+  try {
+    sources = JSON.parse(image.dataset.sources || '[]');
+  } catch (err) {
+    sources = [];
   }
 
-  return raw;
+  const currentIndex = Number(image.dataset.sourceIndex || 0);
+  const nextIndex = currentIndex + 1;
+
+  if (sources[nextIndex]) {
+    image.dataset.sourceIndex = String(nextIndex);
+    image.src = sources[nextIndex];
+    return;
+  }
+
+  image.classList.add('qr-image-error');
+  image.alt = 'No se pudo cargar el QR. Abrí el link de abajo para acceder al cuestionario.';
+}
+
+function driveUrlToImageSources(url) {
+  const raw = String(url || '').trim();
+  if (!raw) return [];
+
+  const id = getDriveFileId(raw);
+
+  if (!id) {
+    return [raw];
+  }
+
+  const encodedId = encodeURIComponent(id);
+
+  return uniqueValues([
+    `https://drive.google.com/thumbnail?id=${encodedId}&sz=w1000`,
+    `https://drive.usercontent.google.com/download?id=${encodedId}&export=view`,
+    `https://drive.google.com/uc?export=view&id=${encodedId}`,
+    raw
+  ]);
+}
+
+function getDriveFileId(url) {
+  const raw = String(url || '').trim();
+  const fileMatch = raw.match(/\/file\/d\/([^/]+)/);
+  const idMatch = raw.match(/[?&]id=([^&]+)/);
+
+  return decodeURIComponent(fileMatch?.[1] || idMatch?.[1] || '');
+}
+
+function uniqueValues(values) {
+  return values.filter((value, index, array) => value && array.indexOf(value) === index);
 }
 
 function closeQrLightbox() {
