@@ -1375,6 +1375,24 @@ gap: 4px;
   font-weight: 700;
 }
 
+
+.aula-title-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.aula-comment {
+  font-family: var(--ff-kreon);
+  font-weight: 300;
+  font-size: .9rem;
+  line-height: 1.1;
+  text-align: right;
+  color: rgba(255,255,255,.82);
+}
+
+
 /* ================= RESPONSIVE ================= */
 
 @media (min-width: 760px) {
@@ -1471,6 +1489,19 @@ gap: 4px;
   .test-topic {
     padding-left: calc(22px + 6px + 50px);
   }
+
+  .aula-title-bar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .aula-comment {
+    text-align: left;
+    font-size: .84rem;
+  }
+
+
 }
 
 @media (prefers-reduced-motion: reduce) {

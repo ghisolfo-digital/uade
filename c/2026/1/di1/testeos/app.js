@@ -4,16 +4,17 @@ const CSV_REFRESH_JITTER_MS = 30000;
 const CSV_FIRST_LIVE_JITTER_MS = 25000;
 const LOCAL_CACHE_KEY = 'testeosUX_csv_cache_v1';
 
-    const app = {
-      config: {},
-      teams: new Map(),
-      agenda: [],
-      texts: [],
-      links: {},
-      selectedTeam: null,
-      allBlocks: [],
-      aulaOrder: []
-    };
+const app = {
+  config: {},
+  teams: new Map(),
+  agenda: [],
+  texts: [],
+  links: {},
+  aulas: new Map(),
+  selectedTeam: null,
+  allBlocks: [],
+  aulaOrder: []
+};
 
     init();
 
@@ -70,6 +71,7 @@ function resetData() {
   app.agenda = [];
   app.texts = [];
   app.links = {};
+  app.aulas = new Map();
   app.allBlocks = [];
   app.aulaOrder = [];
 }
@@ -200,6 +202,16 @@ if (tipo === 'agenda') {
             url_qr: d
           };
         }
+
+
+if (tipo === 'aulas') {
+  app.aulas.set(a, {
+    aula: a,
+    ubicacion: b,
+    comentario: c
+  });
+}
+
       });
 
       inferMissingEndTimes();
@@ -649,14 +661,23 @@ function renderTables() {
   box.innerHTML = aulas.map(aula => {
     const rows = app.agenda.filter(item => item.aula === aula);
 
-    return `
-      <div class="card">
-        <h3>Aula <span class="aula-code">${escapeHTML(aula)}</span></h3>
-        <div class="schedule-list">
-          ${rows.map(row => renderScheduleBlock(row)).join('')}
-        </div>
-      </div>
-    `;
+const dataAula = aulaData(aula);
+
+return `
+  <div class="card">
+    <h3 class="aula-title-bar">
+      <span>Aula <span class="aula-code">${escapeHTML(aula)}</span></span>
+      ${
+        dataAula.comentario
+          ? `<span class="aula-comment">${escapeHTML(dataAula.comentario)}</span>`
+          : ''
+      }
+    </h3>
+    <div class="schedule-list">
+      ${rows.map(row => renderScheduleBlock(row)).join('')}
+    </div>
+  </div>
+`;
   }).join('');
 }
 
@@ -1002,6 +1023,14 @@ function teamData(id) {
     id,
     nombre: `Equipo ${id}`,
     tematica: ''
+  };
+}
+
+function aulaData(aula) {
+  return app.aulas.get(String(aula)) || {
+    aula,
+    ubicacion: '',
+    comentario: ''
   };
 }
 
