@@ -2148,3 +2148,21 @@ body {
     overflow-x: hidden;
   }
 }
+
+
+/* ================= MICROAJUSTES: BARRA CONTEXTO / QR ================= */
+
+/* Cuando aparece Estás viendo / Simulando, deja volver el aire inferior dentro del header */
+.selected-team-bar {
+  margin-bottom: 0 !important;
+  margin-top: 8px;
+}
+
+.selected-team-inner {
+  padding-bottom: 9px;
+}
+
+/* Mantiene el header compacto cuando no hay barra contextual */
+.selected-team-bar[hidden] {
+  display: none;
+}
