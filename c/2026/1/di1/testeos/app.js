@@ -16,9 +16,7 @@ const app = {
   selectedTeam: null,
   allBlocks: [],
   aulaOrder: [],
-  dateOpenState: {},
-  simulatedDate: null,
-  simulatedTime: null
+  dateOpenState: {}
 };
 
     init();
@@ -26,8 +24,6 @@ const app = {
 async function init() {
   const params = new URLSearchParams(window.location.search);
   app.selectedTeam = params.get('e') || '';
-  app.simulatedDate = parseSimulatedDateParam(params.get('f'));
-  app.simulatedTime = parseSimulatedTimeParam(params.get('h'));
 
   try {
     const initialCsv = await loadInitialCsv();
@@ -139,6 +135,81 @@ function getCachedCsv() {
 function randomBetween(min, max) {
   return Math.floor(min + Math.random() * (max - min));
 }
+
+function getSimulationParams() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    date: parseSimulationDate(params.get('f')),
+    time: parseSimulationTime(params.get('h')),
+    hasDate: Boolean(params.get('f') && parseSimulationDate(params.get('f'))),
+    hasTime: Boolean(params.get('h') && parseSimulationTime(params.get('h')))
+  };
+}
+
+function parseSimulationDate(value) {
+  const raw = String(value || '').trim();
+  const match = raw.match(/^(\d{2})(\d{2})(\d{4})?$/);
+  if (!match) return null;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = match[3] ? Number(match[3]) : new Date().getFullYear();
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function parseSimulationTime(value) {
+  const raw = String(value || '').trim();
+  const match = raw.match(/^(\d{2})(\d{2})$/);
+  if (!match) return null;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+
+  return { hours, minutes };
+}
+
+function getCurrentDateTime() {
+  const realNow = new Date();
+  const simulation = getSimulationParams();
+  const current = simulation.date ? new Date(simulation.date) : new Date(realNow);
+
+  if (simulation.time) {
+    current.setHours(simulation.time.hours, simulation.time.minutes, 0, 0);
+  } else {
+    current.setHours(realNow.getHours(), realNow.getMinutes(), realNow.getSeconds(), realNow.getMilliseconds());
+  }
+
+  return current;
+}
+
+function isSimulatingDate() {
+  return getSimulationParams().hasDate;
+}
+
+function isSimulatingTime() {
+  return getSimulationParams().hasTime;
+}
+
+function removeUrlParam(paramName) {
+  const url = new URL(window.location.href);
+  url.searchParams.delete(paramName);
+  history.pushState({}, '', url);
+  renderAll();
+}
+
     async function fetchCsv() {
       const url = CSV_URL + (CSV_URL.includes('?') ? '&' : '?') + 'cache=' + Date.now();
       const res = await fetch(url);
@@ -221,7 +292,8 @@ function randomBetween(min, max) {
       app.links[a] = {
         label: b,
         url: c,
-        url_qr: d
+        url_qr: d,
+        forzar_url_qr: isTrueLike(e)
       };
     }
   });
@@ -240,101 +312,6 @@ function randomBetween(min, max) {
 
   app.texts.sort((x, y) => x.orden - y.orden);
   app.allBlocks = uniqueBlocks(app.agenda);
-}
-
-
-function parseSimulatedDateParam(value) {
-  const raw = String(value || '').trim();
-  const match = raw.match(/^(\d{2})(\d{2})(\d{4})?$/);
-
-  if (!match) return null;
-
-  const day = Number(match[1]);
-  const month = Number(match[2]);
-  const year = match[3] ? Number(match[3]) : new Date().getFullYear();
-  const date = new Date(year, month - 1, day);
-
-  if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
-  ) {
-    return null;
-  }
-
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
-
-function parseSimulatedTimeParam(value) {
-  const raw = String(value || '').trim();
-  const match = raw.match(/^(\d{1,2})(\d{2})$/);
-
-  if (!match) return null;
-
-  const hour = Number(match[1]);
-  const minutes = Number(match[2]);
-
-  if (hour < 0 || hour > 23 || minutes < 0 || minutes > 59) return null;
-
-  return { hour, minutes };
-}
-
-function getNow() {
-  const realNow = new Date();
-  const date = app.simulatedDate
-    ? new Date(app.simulatedDate)
-    : new Date(realNow.getFullYear(), realNow.getMonth(), realNow.getDate());
-
-  const time = app.simulatedTime || {
-    hour: realNow.getHours(),
-    minutes: realNow.getMinutes()
-  };
-
-  date.setHours(time.hour, time.minutes, realNow.getSeconds(), realNow.getMilliseconds());
-  return date;
-}
-
-function hasSimulation() {
-  return Boolean(app.simulatedDate || app.simulatedTime);
-}
-
-function isRealToday(date) {
-  if (!date) return false;
-  const today = new Date();
-  return (
-    today.getFullYear() === date.getFullYear() &&
-    today.getMonth() === date.getMonth() &&
-    today.getDate() === date.getDate()
-  );
-}
-
-function formatSimulatedDateChip() {
-  if (!app.simulatedDate) return '';
-  if (isRealToday(app.simulatedDate)) return 'hoy';
-  return formatDateWithWeekday(app.simulatedDate, { capitalizeFirstWord: false });
-}
-
-function formatSimulatedTimeChip() {
-  if (!app.simulatedTime) return '';
-  return `${String(app.simulatedTime.hour).padStart(2, '0')}:${String(app.simulatedTime.minutes).padStart(2, '0')}`;
-}
-
-function removeUrlParam(param) {
-  const url = new URL(window.location.href);
-  url.searchParams.delete(param);
-  history.pushState({}, '', url);
-
-  if (param === 'e') {
-    app.selectedTeam = '';
-    const select = document.getElementById('team-select');
-    if (select) select.value = '';
-  }
-
-  if (param === 'f') app.simulatedDate = null;
-  if (param === 'h') app.simulatedTime = null;
-
-  renderAll();
 }
 
 function renderAll() {
@@ -499,7 +476,7 @@ function agendaDates() {
 }
 
 function nextActiveOrFutureAgendaDate() {
-  const now = getNow();
+  const now = getCurrentDateTime();
 
   return agendaDates().find(item => {
     const last = getLastBlockDateTime(item.key);
@@ -510,15 +487,21 @@ function nextActiveOrFutureAgendaDate() {
 function isAnyAgendaDateToday() {
   return agendaDates().some(item => isDateToday(item.date));
 }
-
-
 function isAnyAgendaDateRealToday() {
-  return agendaDates().some(item => isRealToday(item.date));
+  const realToday = new Date();
+  return agendaDates().some(item => {
+    const date = item.date;
+    return Boolean(date &&
+      realToday.getFullYear() === date.getFullYear() &&
+      realToday.getMonth() === date.getMonth() &&
+      realToday.getDate() === date.getDate()
+    );
+  });
 }
 
 function isDateToday(date) {
   if (!date) return false;
-  const today = getNow();
+  const today = getCurrentDateTime();
 
   return (
     today.getFullYear() === date.getFullYear() &&
@@ -528,7 +511,7 @@ function isDateToday(date) {
 }
 
 function currentDateKey() {
-  return dateKey(getNow());
+  return dateKey(getCurrentDateTime());
 }
 
 function formatDateWithWeekday(dateOrValue, options = {}) {
@@ -556,6 +539,9 @@ function formatTwoDates(firstDate, secondDate, options = {}) {
 
 function formatDateNumeric(date) {
   return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+}
+function formatTimeNumeric(date) {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
 function formatShortDate(date) {
@@ -620,7 +606,7 @@ function getLastBlockDateTime(fechaKey = null) {
 }
 
 function getNextGlobalBlockDateTime() {
-  const now = getNow();
+  const now = getCurrentDateTime();
   const upcoming = app.allBlocks
     .map(block => blockDateTime(block, 'inicio'))
     .filter(date => date && date > now)
@@ -643,7 +629,7 @@ function rowDateTime(row, point = 'inicio') {
 }
 
 function formatTimeUntil(targetDate) {
-  const now = getNow();
+  const now = getCurrentDateTime();
   const diffMs = targetDate - now;
 
   if (diffMs <= 0) return '';
@@ -670,7 +656,7 @@ function testDateStatus() {
 
   if (!firstBlockDateTime || !lastBlockDateTime) return 'unknown';
 
-  const now = getNow();
+  const now = getCurrentDateTime();
   if (now < firstBlockDateTime) return 'future';
   if (now > lastBlockDateTime) return 'past';
   return 'active-day';
@@ -681,73 +667,75 @@ function isTestDateToday() {
 }
 
 function formatTodayWithWeekdayAndTime() {
-  const d = getNow();
+  const d = getCurrentDateTime();
   return `${formatDateWithWeekday(d, { capitalizeFirstWord: true })}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 function renderSelectedTeamBar() {
   const bar = document.getElementById('selected-team-bar');
-  const inner = bar ? bar.querySelector('.selected-team-inner') : null;
+  if (!bar) return;
 
-  if (!bar || !inner) return;
+  const simulatingDate = isSimulatingDate();
+  const simulatingTime = isSimulatingTime();
+  const hasSimulation = simulatingDate || simulatingTime;
+  const current = getCurrentDateTime();
+  const hasContent = Boolean(app.selectedTeam || hasSimulation);
 
-  const hasTeam = Boolean(app.selectedTeam);
-  const simulating = hasSimulation();
-
-  if (!hasTeam && !simulating) {
+  if (!hasContent) {
     bar.hidden = true;
     return;
   }
 
   bar.hidden = false;
 
-  const teamChip = hasTeam
+  const teamChip = app.selectedTeam
     ? `
-      <button id="clear-team-button" class="selected-team-pill" type="button" aria-label="Ver todos los equipos">
+      <span class="selected-team-prefix">Estás viendo</span>
+      <button class="selected-team-pill" type="button" data-clear-param="e" aria-label="Ver todos los equipos">
         <span>${escapeHTML(teamNumber(app.selectedTeam))} · ${escapeHTML(teamName(app.selectedTeam))}</span>
         <i class="ti ti-x"></i>
       </button>
     `
     : '';
 
-  const simulationLabel = simulating
-    ? `<span class="simulation-label"><span aria-hidden="true">🌀</span> Simulando</span>`
-    : '';
-
-  const dateChip = app.simulatedDate
+  const simulationLabel = hasSimulation
     ? `
-      <button class="selected-team-pill simulation-pill" type="button" data-clear-simulation="f" aria-label="Quitar fecha simulada">
-        <span>${escapeHTML(formatSimulatedDateChip())}</span>
-        <i class="ti ti-x"></i>
-      </button>
+      ${app.selectedTeam ? '<span class="selected-team-dot" aria-hidden="true">·</span>' : ''}
+      <span class="simulation-prefix"><span aria-hidden="true">🎬</span> Simulando</span>
+      ${!simulatingDate ? `<span class="simulation-current-text">hoy ${escapeHTML(formatDateWithWeekday(current, { capitalizeFirstWord: false }))}</span>` : ''}
+      ${!simulatingTime ? `<span class="simulation-current-text">${escapeHTML(formatTimeNumeric(current))} hs.</span>` : ''}
+      ${simulatingDate ? `
+        <button class="selected-team-pill simulation-pill" type="button" data-clear-param="f" aria-label="Quitar fecha simulada">
+          <span>${escapeHTML(formatDateWithWeekday(current, { capitalizeFirstWord: true }))}</span>
+          <i class="ti ti-x"></i>
+        </button>
+      ` : ''}
+      ${simulatingTime ? `
+        <button class="selected-team-pill simulation-pill" type="button" data-clear-param="h" aria-label="Quitar hora simulada">
+          <span>${escapeHTML(formatTimeNumeric(current))} hs.</span>
+          <i class="ti ti-x"></i>
+        </button>
+      ` : ''}
     `
     : '';
 
-  const timeChip = app.simulatedTime
-    ? `
-      <button class="selected-team-pill simulation-pill" type="button" data-clear-simulation="h" aria-label="Quitar hora simulada">
-        <span>${escapeHTML(formatSimulatedTimeChip())}</span>
-        <i class="ti ti-x"></i>
-      </button>
-    `
-    : '';
-
-  inner.innerHTML = `
-    <span class="selected-team-prefix">Estás viendo</span>
-    ${teamChip}
-    ${simulating ? '<span class="selected-team-dot">·</span>' : ''}
-    ${simulationLabel}
-    ${dateChip}
-    ${timeChip}
+  bar.innerHTML = `
+    <div class="selected-team-inner">
+      ${teamChip}
+      ${simulationLabel}
+    </div>
   `;
 
-  const clearTeamButton = document.getElementById('clear-team-button');
-  if (clearTeamButton) {
-    clearTeamButton.onclick = () => removeUrlParam('e');
-  }
-
-  inner.querySelectorAll('[data-clear-simulation]').forEach(button => {
-    button.addEventListener('click', () => removeUrlParam(button.getAttribute('data-clear-simulation')));
+  bar.querySelectorAll('[data-clear-param]').forEach(button => {
+    button.addEventListener('click', () => {
+      const param = button.getAttribute('data-clear-param');
+      if (param === 'e') {
+        app.selectedTeam = '';
+        const select = document.getElementById('team-select');
+        if (select) select.value = '';
+      }
+      removeUrlParam(param);
+    });
   });
 }
 
@@ -782,8 +770,6 @@ function renderSelectedTeamBar() {
       window.onpopstate = () => {
         const params = new URLSearchParams(window.location.search);
         app.selectedTeam = params.get('e') || '';
-  app.simulatedDate = parseSimulatedDateParam(params.get('f'));
-  app.simulatedTime = parseSimulatedTimeParam(params.get('h'));
         renderAll();
       };
     }
@@ -829,14 +815,11 @@ function renderGrillaMenuLinks() {
     return;
   }
 
-  container.innerHTML = dates.map(dateInfo => {
-    const id = `grilla-${dateInfo.key}`;
-    return `
-      <a class="menu-link" href="#${escapeHTML(id)}" data-section-link="${escapeHTML(id)}">
-        Grilla · ${escapeHTML(formatShortDate(dateInfo.date))}
-      </a>
-    `;
-  }).join('');
+  container.innerHTML = dates.map(dateInfo => `
+    <a class="menu-link" href="#grilla-${escapeHTML(dateInfo.key)}" data-section-link="grilla-${escapeHTML(dateInfo.key)}">
+      Grilla general · ${escapeHTML(formatDateWithWeekday(dateInfo.date, { capitalizeFirstWord: true }))}
+    </a>
+  `).join('');
 }
 
 function setLink(id, data, fallbackLabel) {
@@ -990,7 +973,7 @@ function isDateGridOpen(key) {
 
 function shouldDateGridStartOpen(key) {
   const lastGlobalBlock = getLastBlockDateTime();
-  if (lastGlobalBlock && getNow() > lastGlobalBlock) return true;
+  if (lastGlobalBlock && getCurrentDateTime() > lastGlobalBlock) return true;
 
   const activeOrNext = nextActiveOrFutureAgendaDate();
   if (activeOrNext) return activeOrNext.key === key;
@@ -1280,7 +1263,7 @@ function currentActionForTeam(teamId) {
 }
 
 function nextActionForTeam(teamId) {
-  const now = getNow();
+  const now = getCurrentDateTime();
   return myActions(teamId).find(action => action.startDateTime && action.startDateTime > now) || null;
 }
 
@@ -1293,32 +1276,26 @@ function currentRows() {
 function isRowNow(row) {
   const start = rowDateTime(row, 'inicio');
   const end = rowDateTime(row, 'cierre');
-  const now = getNow();
+  const now = getCurrentDateTime();
   return Boolean(start && end && now >= start && now < end);
 }
 
 function isRowPast(row) {
   const end = rowDateTime(row, 'cierre');
-  return Boolean(end && getNow() > end);
+  return Boolean(end && getCurrentDateTime() > end);
 }
 
 function isActionNow(action) {
-  const now = getNow();
+  const now = getCurrentDateTime();
   return Boolean(action.startDateTime && action.endDateTime && now >= action.startDateTime && now < action.endDateTime);
 }
 
 function isActionPast(action) {
-  return Boolean(action.endDateTime && getNow() > action.endDateTime);
+  return Boolean(action.endDateTime && getCurrentDateTime() > action.endDateTime);
 }
 
     function currentMinutes() {
-      const forced = new URLSearchParams(window.location.search).get('t');
-
-      if (forced && /^\d{1,2}:\d{2}$/.test(forced)) {
-        return timeToMin(forced);
-      }
-
-      const d = getNow();
+      const d = getCurrentDateTime();
       return d.getHours() * 60 + d.getMinutes();
     }
 
@@ -1468,8 +1445,12 @@ function isSelectedTeam(id) {
       return row[index] ? String(row[index]).trim() : '';
     }
 
+function isTrueLike(value) {
+  return String(value || '').trim().toUpperCase() === 'TRUE';
+}
+
 function currentClockLabel() {
-  const d = getNow();
+  const d = getCurrentDateTime();
   const hour = String(d.getHours()).padStart(2, '0');
   const minutes = String(d.getMinutes()).padStart(2, '0');
 
@@ -1655,8 +1636,8 @@ function setupQrLightbox() {
 
   button.addEventListener('click', () => {
     closeHeaderMenu();
-    updateQrData();
     lightbox.hidden = false;
+    window.setTimeout(updateQrData, 40);
   });
 
   lightbox.querySelectorAll('[data-close-qr]').forEach(el => {
@@ -1677,9 +1658,14 @@ function updateQrData() {
   const image = document.getElementById('qr-image');
   const qrButton = document.getElementById('qr-button');
   const qrUrl = document.getElementById('qr-url');
+  const copyButton = document.getElementById('copy-form-link-button');
 
-  const imageSources = driveUrlToImageSources(cuestionario.url_qr || '');
   const cuestionarioUrl = String(cuestionario.url || '').trim();
+  const automaticSources = qrImageSourcesFromUrl(cuestionarioUrl);
+  const fallbackSources = driveUrlToImageSources(cuestionario.url_qr || '');
+  const imageSources = cuestionario.forzar_url_qr
+    ? fallbackSources
+    : uniqueValues([...automaticSources, ...fallbackSources]);
 
   if (image) {
     image.dataset.sources = JSON.stringify(imageSources);
@@ -1702,11 +1688,41 @@ function updateQrData() {
     }
   }
 
+  if (copyButton) {
+    copyButton.hidden = !cuestionarioUrl;
+    copyButton.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(cuestionarioUrl);
+        copyButton.classList.add('is-copied');
+        copyButton.innerHTML = '<i class="ti ti-check"></i> Link copiado';
+        setTimeout(() => {
+          copyButton.classList.remove('is-copied');
+          copyButton.innerHTML = '<i class="ti ti-copy"></i> Copiar link al formulario';
+        }, 1600);
+      } catch (err) {
+        console.warn(err);
+        window.prompt('Copiá el link al formulario:', cuestionarioUrl);
+      }
+    };
+  }
+
   if (qrButton) {
     const enabled = Boolean(imageSources.length || cuestionarioUrl);
     qrButton.style.opacity = enabled ? '1' : '.45';
     qrButton.style.pointerEvents = enabled ? 'auto' : 'none';
   }
+}
+
+function qrImageSourcesFromUrl(url) {
+  const raw = String(url || '').trim();
+  if (!raw) return [];
+
+  const encoded = encodeURIComponent(raw);
+
+  return uniqueValues([
+    `https://api.qrserver.com/v1/create-qr-code/?size=640x640&margin=8&data=${encoded}`,
+    `https://quickchart.io/qr?size=640&margin=1&text=${encoded}`
+  ]);
 }
 
 function tryNextQrImageSource(image) {
