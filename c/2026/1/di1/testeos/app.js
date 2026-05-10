@@ -336,7 +336,65 @@ function formatDateWithWeekday(value) {
 
   return `${weekdays[date.getDay()]} ${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
 }
+function getTestDate() {
+  const raw = String(app.config.fecha || '').trim();
+  const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
 
+  if (!match) return null;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+function isTestDateToday() {
+  const testDate = getTestDate();
+
+  if (!testDate) return true;
+
+  const today = new Date();
+
+  return (
+    today.getFullYear() === testDate.getFullYear() &&
+    today.getMonth() === testDate.getMonth() &&
+    today.getDate() === testDate.getDate()
+  );
+}
+
+function formatTodayWithWeekdayAndTime() {
+  const d = new Date();
+
+  const weekdays = [
+    'Domingo',
+    'Lunes',
+    'Martes',
+    'Miércoles',
+    'Jueves',
+    'Viernes',
+    'Sábado'
+  ];
+
+  const dayName = weekdays[d.getDay()];
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hour = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+
+  return `${dayName} ${day}/${month}/${year}, ${hour}:${minutes}`;
+}
 
 function renderSelectedTeamBar() {
   const bar = document.getElementById('selected-team-bar');
@@ -458,8 +516,8 @@ function renderCurrentStatus() {
     box.innerHTML = `
       <div class="card">
 <div class="eyebrow">Ahora</div>
-        <div class="big">No hay un bloque activo</div>
-        <div class="sub">Puede ser antes del primer turno o después del último.</div>
+        <div class="big">No hay actividad ahora</div>
+      <div class="sub">De acuerdo a los horarios previstos, en este momento no hay equipos realizando testeos.</div>
       </div>
     `;
     return;
@@ -718,23 +776,29 @@ function myActions(teamId) {
 
   return actions.sort((a, b) => timeToMin(a.horaInicio) - timeToMin(b.horaInicio));
 }
-    function currentActionForTeam(teamId) {
-      return myActions(teamId).find(action => isActionNow(action)) || null;
-    }
+function currentActionForTeam(teamId) {
+  if (!isTestDateToday()) return null;
 
-    function nextActionForTeam(teamId) {
-      const nowMin = currentMinutes();
+  return myActions(teamId).find(action => isActionNow(action)) || null;
+}
 
-      return myActions(teamId).find(action =>
-        timeToMin(action.horaInicio) > nowMin
-      ) || null;
-    }
+function nextActionForTeam(teamId) {
+  if (!isTestDateToday()) return null;
 
-    function currentRows() {
-      return app.agenda
-        .filter(row => isRowNow(row))
-        .sort((a, b) => app.aulaOrder.indexOf(a.aula) - app.aulaOrder.indexOf(b.aula));
-    }
+  const nowMin = currentMinutes();
+
+  return myActions(teamId).find(action =>
+    timeToMin(action.horaInicio) > nowMin
+  ) || null;
+}
+
+function currentRows() {
+  if (!isTestDateToday()) return [];
+
+  return app.agenda
+    .filter(row => isRowNow(row))
+    .sort((a, b) => app.aulaOrder.indexOf(a.aula) - app.aulaOrder.indexOf(b.aula));
+}
 
     function isRowNow(row) {
       const now = currentMinutes();
@@ -886,9 +950,17 @@ function isSelectedTeam(id) {
       return row[index] ? String(row[index]).trim() : '';
     }
 
-    function currentClockLabel() {
+function currentClockLabel() {
   const d = new Date();
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+  const hour = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+
+  if (isTestDateToday()) {
+    return `${hour}:${minutes}`;
+  }
+
+  return formatTodayWithWeekdayAndTime();
 }
 
 function formatText(text) {
