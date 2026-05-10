@@ -387,9 +387,7 @@ function renderLinks() {
   if (!shareButton) return;
 
   shareButton.onclick = async () => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('e');
-    url.searchParams.delete('t');
+  const url = new URL(window.location.origin + window.location.pathname);
 
     const title = app.config.titulo || 'Testeos UX';
 
