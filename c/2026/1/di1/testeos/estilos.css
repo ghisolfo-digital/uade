@@ -1222,7 +1222,7 @@ gap: 4px;
 .qr-lightbox {
   position: fixed;
   inset: 0;
-  z-index: 3000;
+  z-index: 8000;
   display: grid;
   place-items: center;
   padding: 18px;
