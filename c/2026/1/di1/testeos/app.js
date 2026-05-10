@@ -245,12 +245,14 @@ function renderClockTitle() {
   const el = document.getElementById('current-clock-title');
   if (el) el.textContent = currentClockLabel();
 }
+function getAppTitle() {
+  return app.config.titulo || 'Testeos UX';
+}
 
 function renderHeader() {
   document.title = buildDocumentTitle();
 
-  document.getElementById('site-title').textContent =
-    app.config.titulo || 'Testeos UX';
+  document.getElementById('site-title').textContent = getAppTitle();
 
   const meta = document.querySelector('.site-header .meta');
   if (meta) {
@@ -264,7 +266,7 @@ function renderHeader() {
 }
 
 function buildDocumentTitle() {
-  const titulo = app.config.titulo || 'Testeos UX';
+  const titulo = getAppTitle();
   const materia = app.config.materia || '';
   const fecha = formatDateForTitle(app.config.fecha || '');
 
@@ -285,7 +287,6 @@ function formatDateForTitle(value) {
 
   return `${day}/${month}/${year}`;
 }
-
 function buildHeaderMetaText() {
   const universidad = app.config.universidad || '';
   const materia = app.config.materia || '';
