@@ -1,7 +1,4 @@
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQb2Ggbd5Y1VOwTbAI7CjvaHNDwyYs5Y5IuJQCtR2G1eF7pN_bECM4_EQKMPvmwUredXZ2vMmZ43uiu/pub?gid=331164853&single=true&output=csv';
-const QR_IMAGE_URL = 'https://drive.google.com/uc?export=view&id=REEMPLAZAR_ID_DE_GOOGLE_DRIVE';
-const QR_PUBLIC_URL = QR_IMAGE_URL;
-
 const CSV_REFRESH_MS = 120000;
 const CSV_REFRESH_JITTER_MS = 30000;
 const CSV_FIRST_LIVE_JITTER_MS = 25000;
@@ -199,7 +196,8 @@ if (tipo === 'agenda') {
         if (tipo === 'links') {
           app.links[a] = {
             label: b,
-            url: c
+            url: c,
+            url_qr: d
           };
         }
       });
@@ -250,8 +248,14 @@ function renderClockTitle() {
 
     function renderHeader() {
       document.title = app.config.titulo || 'Testeos UX';
-      document.getElementById('site-title').textContent = app.config.titulo || 'Testeos UX';
-      document.getElementById('site-subtitle').textContent = app.config.bajada || '';
+
+      const title = document.getElementById('site-title');
+      const meta = document.getElementById('site-meta');
+      const subtitle = document.getElementById('site-subtitle');
+
+      if (title) title.textContent = app.config.titulo || 'Testeos UX';
+      if (meta) meta.textContent = app.config.bajada || '';
+      if (subtitle) subtitle.textContent = app.config.txt_intro || '';
     }
 
 
@@ -320,36 +324,40 @@ function renderSelectedTeamBar() {
     }
 
 function renderLinks() {
-  setLink('feedback-link', app.links.feedback, 'Form de feedback a otro equipo');
-      
+  setLink('feedback-link', app.links.feedback, 'Form de feedback');
+  setLink('header-feedback-link', app.links.feedback, 'Form de feedback');
+  updateQrData();
 
-      document.getElementById('share-button').onclick = async () => {
-        const url = new URL(window.location.href);
-url.searchParams.delete('e');
-url.searchParams.delete('t');
-        const title = app.selectedTeam
-          ? `Agenda del equipo ${app.selectedTeam} · ${teamName(app.selectedTeam)}`
-          : app.config.titulo || 'Testeos UX';
+  const shareButton = document.getElementById('share-button');
+  if (!shareButton) return;
 
-        try {
-          if (navigator.share) {
-            await navigator.share({ title, url: url.toString() });
-          } else {
-            await navigator.clipboard.writeText(url.toString());
-            alert('Link copiado');
-          }
-        } catch (err) {
-          console.warn(err);
-        }
-      };
+  shareButton.onclick = async () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('e');
+    url.searchParams.delete('t');
+
+    const title = app.config.titulo || 'Testeos UX';
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url: url.toString() });
+      } else {
+        await navigator.clipboard.writeText(url.toString());
+        alert('Link copiado');
+      }
+    } catch (err) {
+      console.warn(err);
     }
+  };
+}
 
 function setLink(id, data, fallbackLabel) {
   const el = document.getElementById(id);
   if (!el) return;
 
   const fixedLabels = {
-    'feedback-link': 'Form de feedback a otro equipo'
+    'feedback-link': 'Form de feedback',
+    'header-feedback-link': 'Form de feedback'
   };
 
   el.textContent = fixedLabels[id] || data?.label || fallbackLabel;
@@ -917,10 +925,7 @@ menu.addEventListener('click', event => {
     closeHeaderMenu();
 
     if (!app.selectedTeam) {
-      const selector = document.querySelector('.selector-card');
-      if (selector) {
-        selector.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -979,18 +984,14 @@ function setupQrLightbox() {
   const button = document.getElementById('qr-button');
   const lightbox = document.getElementById('qr-lightbox');
   const image = document.getElementById('qr-image');
-const qrUrl = document.getElementById('qr-url');
+
   if (!button || !lightbox || !image) return;
 
-image.src = QR_IMAGE_URL;
-
-if (qrUrl) {
-  qrUrl.href = QR_PUBLIC_URL;
-  qrUrl.textContent = QR_PUBLIC_URL;
-}
+  updateQrData();
 
   button.addEventListener('click', () => {
     closeHeaderMenu();
+    updateQrData();
     lightbox.hidden = false;
   });
 
@@ -1001,6 +1002,41 @@ if (qrUrl) {
   image.addEventListener('error', () => {
     image.alt = 'No se pudo cargar el QR. Revisá el enlace de Google Drive.';
   });
+}
+
+function updateQrData() {
+  const cuestionario = app.links.cuestionario || {};
+  const image = document.getElementById('qr-image');
+  const qrButton = document.getElementById('qr-button');
+
+  const imageUrl = driveUrlToImageUrl(cuestionario.url_qr || '');
+
+  if (image) {
+    image.src = imageUrl;
+    image.hidden = !imageUrl;
+  }
+
+  if (qrButton) {
+    qrButton.style.opacity = imageUrl ? '1' : '.45';
+    qrButton.style.pointerEvents = imageUrl ? 'auto' : 'none';
+  }
+}
+
+function driveUrlToImageUrl(url) {
+  const raw = String(url || '').trim();
+  if (!raw) return '';
+
+  const fileMatch = raw.match(/\/file\/d\/([^/]+)/);
+  if (fileMatch && fileMatch[1]) {
+    return `https://drive.google.com/uc?export=view&id=${fileMatch[1]}`;
+  }
+
+  const idMatch = raw.match(/[?&]id=([^&]+)/);
+  if (idMatch && idMatch[1]) {
+    return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
+  }
+
+  return raw;
 }
 
 function closeQrLightbox() {

@@ -792,7 +792,9 @@ td.is-selected {
 }
 
 .header-feedback-btn {
-  padding: 6px 11px;
+  width: auto;
+  min-height: 34px;
+  padding: 7px 11px;
   font-size: .78rem;
   line-height: 1;
   font-weight: 800;
@@ -1027,6 +1029,7 @@ main > section > h2 {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 7px;
 }
 
 .header-menu-btn {
@@ -1325,7 +1328,7 @@ gap: 4px;
 
   .header-feedback-btn {
     font-size: .74rem;
-    padding: 6px 10px;
+    padding: 7px 10px;
   }
 }
 
