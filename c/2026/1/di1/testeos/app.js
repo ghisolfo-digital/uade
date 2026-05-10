@@ -1,4 +1,4 @@
-    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQb2Ggbd5Y1VOwTbAI7CjvaHNDwyYs5Y5IuJQCtR2G1eF7pN_bECM4_EQKMPvmwUredXZ2vMmZ43uiu/pub?gid=331164853&single=true&output=csv';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQb2Ggbd5Y1VOwTbAI7CjvaHNDwyYs5Y5IuJQCtR2G1eF7pN_bECM4_EQKMPvmwUredXZ2vMmZ43uiu/pub?gid=331164853&single=true&output=csv';
 const CSV_REFRESH_MS = 120000;
 const CSV_REFRESH_JITTER_MS = 30000;
 const CSV_REFRESH_OFFDAY_MS = 1800000;
@@ -8,6 +8,7 @@ const LOCAL_CACHE_KEY = 'testeosUX_csv_cache_v2_fechas';
 
 const app = {
   config: {},
+  settings: {},
   teams: new Map(),
   agenda: [],
   texts: [],
@@ -72,6 +73,7 @@ function applyCsvText(csvText) {
 
 function resetData() {
   app.config = {};
+  app.settings = {};
   app.teams = new Map();
   app.agenda = [];
   app.texts = [];
@@ -165,6 +167,10 @@ function randomBetween(min, max) {
       app.config[a] = b;
     }
 
+    if (tipo === 'seteos') {
+      app.settings[a] = b;
+    }
+
     if (tipo === 'equipos') {
       app.teams.set(a, {
         id: a,
@@ -213,7 +219,8 @@ function randomBetween(min, max) {
     if (tipo === 'texto') {
       app.texts.push({
         orden: Number(a) || 999,
-        texto: b
+        texto: b,
+        visible: isTrue(c)
       });
     }
 
@@ -245,6 +252,7 @@ function randomBetween(min, max) {
 
 function renderAll() {
   renderHeader();
+  renderFavicons();
   renderSelector();
   renderLinks();
   renderGrillaMenuLinks();
@@ -292,6 +300,26 @@ function renderHeader() {
   if (intro) {
     intro.textContent = app.config.txt_intro || '';
   }
+}
+
+function renderFavicons() {
+  const rawPath = String(app.config.ruta_favicon || '').trim();
+
+  removeDynamicFavicons();
+
+  if (!rawPath) return;
+
+  const basePath = rawPath.endsWith('/') ? rawPath : rawPath + '/';
+
+  document.head.insertAdjacentHTML('beforeend', `
+    <link data-dynamic-favicon rel="icon" href="${escapeHTML(basePath)}favicon.svg" type="image/svg+xml">
+    <link data-dynamic-favicon rel="icon" href="${escapeHTML(basePath)}favicon.png" type="image/png">
+    <link data-dynamic-favicon rel="shortcut icon" href="${escapeHTML(basePath)}favicon.ico">
+  `);
+}
+
+function removeDynamicFavicons() {
+  document.querySelectorAll('link[data-dynamic-favicon]').forEach(el => el.remove());
 }
 
 function buildDocumentTitle() {
@@ -791,16 +819,91 @@ function removeUrlParam(param) {
     }
 
 function renderLinks() {
-  setLink('feedback-link', app.links.feedback, 'Form de feedback');
-  setLink('header-feedback-link', app.links.feedback, 'Form de feedback');
+  renderHeaderFeedbackLink();
+  renderHeaderMenuContent();
   updateQrData();
+  setupShareButton();
+}
 
+function renderHeaderFeedbackLink() {
+  const actions = document.querySelector('.header-actions');
+  const menuButton = document.getElementById('menu-button');
+  const oldLink = document.getElementById('header-feedback-link');
+
+  if (oldLink) oldLink.remove();
+  if (!actions || !menuButton || !feedbackFormVisible()) return;
+
+  const link = document.createElement('a');
+  link.className = 'header-feedback-btn';
+  link.id = 'header-feedback-link';
+  link.href = '#';
+  link.target = '_blank';
+  link.rel = 'noopener';
+  link.textContent = 'Form de feedback';
+
+  actions.insertBefore(link, menuButton);
+  setLink('header-feedback-link', app.links.feedback, 'Form de feedback');
+}
+
+function renderHeaderMenuContent() {
+  const menu = document.getElementById('header-menu');
+  if (!menu) return;
+
+  menu.innerHTML = `
+    <a class="menu-link" href="#estado-actual" data-section-link="estado-actual">
+      Qué está pasando ahora
+    </a>
+
+    <a class="menu-link" href="#mi-equipo" data-section-link="mi-equipo">
+      Mi equipo
+    </a>
+
+    <div id="grilla-menu-links">
+      <a class="menu-link" href="#grilla-general" data-section-link="grilla-general">
+        Grilla general
+      </a>
+    </div>
+
+    ${aclaracionesVisible() ? `
+      <a class="menu-link" href="#aclaraciones" data-section-link="aclaraciones">
+        Aclaraciones
+      </a>
+    ` : ''}
+
+    <div class="menu-actions">
+      <div class="menu-separator"></div>
+
+      <button class="menu-link menu-link-button" id="share-button" type="button">
+        <i class="ti ti-share-3"></i>
+        Compartir esta app
+      </button>
+
+      ${feedbackFormVisible() ? `
+        <a class="menu-feedback-btn" id="feedback-link" href="#" target="_blank" rel="noopener">
+          Form de feedback
+        </a>
+      ` : ''}
+
+      ${cuestionarioFormVisible() ? `
+        <button class="menu-link menu-link-button" id="qr-button" type="button">
+          <i class="ti ti-qrcode"></i>
+          Ver código QR para usuarios
+        </button>
+      ` : ''}
+    </div>
+  `;
+
+  if (feedbackFormVisible()) {
+    setLink('feedback-link', app.links.feedback, 'Form de feedback');
+  }
+}
+
+function setupShareButton() {
   const shareButton = document.getElementById('share-button');
   if (!shareButton) return;
 
   shareButton.onclick = async () => {
-  const url = new URL(window.location.origin + window.location.pathname);
-
+    const url = new URL(window.location.origin + window.location.pathname);
     const title = getAppTitle();
 
     try {
@@ -838,6 +941,20 @@ function renderGrillaMenuLinks() {
   `).join('');
 }
 
+function setElementVisible(el, visible) {
+  if (!el) return;
+  el.hidden = !visible;
+  el.style.display = visible ? '' : 'none';
+  el.setAttribute('aria-hidden', visible ? 'false' : 'true');
+}
+
+function disableLink(el) {
+  if (!el) return;
+  el.href = '#';
+  el.style.opacity = '.45';
+  el.style.pointerEvents = 'none';
+}
+
 function setLink(id, data, fallbackLabel) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -863,6 +980,7 @@ function setLink(id, data, fallbackLabel) {
 function renderCurrentStatus() {
   const box = document.getElementById('current-status');
   const nowRows = currentRows();
+  const showFeedbackAssignments = feedbackAssignmentsVisible();
 
   if (!nowRows.length) {
     box.innerHTML = `
@@ -877,20 +995,8 @@ function renderCurrentStatus() {
 
   box.innerHTML = nowRows.map(row => {
     const selectedIsHere = teamInRow(app.selectedTeam, row);
-
-    return `
-      <div class="card status-card ${selectedIsHere ? 'current-for-team' : ''}">
-<div class="eyebrow status-eyebrow">
-  <span>Aula <span class="aula-code">${escapeHTML(row.aula)}</span> · ${blockLabelHTML(row)}</span>
-  <span class="live-badge status-live-badge" aria-label="Bloque en vivo"><span class="live-badge-dot">🔴</span><span class="live-badge-text">Ahora</span></span>
-</div>
-
-        <div class="now-testing-line team-label-large">
-          <span aria-hidden="true">📱</span>
-          <span class="now-testing-label">Está testeando</span>
-          <span class="now-testing-team">${teamLabel(row.testea, true)}</span>
-        </div>
-
+    const feedbackHTML = showFeedbackAssignments && row.feedbacks.length
+      ? `
         <div class="sub">Deberían estar dando feedback:</div>
 
         <div class="feedback-list">
@@ -903,6 +1009,22 @@ function renderCurrentStatus() {
             </span>
           `).join('')}
         </div>
+      `
+      : '';
+
+    return `
+      <div class="card status-card ${selectedIsHere ? 'current-for-team' : ''}">
+<div class="eyebrow status-eyebrow">
+  <span>Aula <span class="aula-code">${escapeHTML(row.aula)}</span> · ${blockLabelHTML(row)}</span>
+  <span class="live-badge status-live-badge" aria-label="Bloque en vivo"><span class="live-badge-dot">🔴</span><span class="live-badge-text">Ahora</span></span>
+</div>
+
+        <div class="now-testing-line team-label-large ${isSelectedTeam(row.testea) ? 'is-selected-inline' : ''}">
+          <span aria-hidden="true">📱</span>
+          <span class="now-testing-label">Está testeando</span>
+          <span class="now-testing-team">${teamLabel(row.testea, true)}</span>
+        </div>
+        ${feedbackHTML}
       </div>
     `;
   }).join('');
@@ -1003,6 +1125,19 @@ function shouldDateGridStartOpen(key) {
 function renderScheduleBlock(row) {
   const isNow = isRowNow(row);
   const isPast = isRowPast(row);
+  const feedbackHTML = feedbackAssignmentsVisible() && row.feedbacks.length
+    ? `
+        <div class="feedback-compact-list">
+          ${row.feedbacks.map(id => `
+            <div class="feedback-row ${isSelectedTeam(id) ? 'is-selected-inline' : ''}">
+              <span class="row-emoji" aria-hidden="true">👈</span>
+              <span class="role-label">Da feedback</span>
+              <span>${teamLabel(id, false)}</span>
+            </div>
+          `).join('')}
+        </div>
+      `
+    : '';
 
   return `
     <div class="schedule-block ${isNow ? 'is-now' : ''} ${isPast ? 'is-past' : ''}">
@@ -1026,15 +1161,7 @@ function renderScheduleBlock(row) {
           ${teamTopic(row.testea) ? `<div class="test-topic">${escapeHTML(teamTopic(row.testea))}</div>` : ''}
         </div>
 
-        <div class="feedback-compact-list">
-          ${row.feedbacks.map(id => `
-            <div class="feedback-row ${isSelectedTeam(id) ? 'is-selected-inline' : ''}">
-              <span class="row-emoji" aria-hidden="true">👈</span>
-              <span class="role-label">Da feedback</span>
-              <span>${teamLabel(id, false)}</span>
-            </div>
-          `).join('')}
-        </div>
+        ${feedbackHTML}
       </div>
     </div>
   `;
@@ -1081,13 +1208,24 @@ function renderMyNow(nowAction, nextAction, actions = []) {
 
   if (nowAction) {
     const isFeedback = nowAction.rol === 'Das feedback';
+    const isBreak = nowAction.rol === 'Break';
+    const isUndefined = nowAction.rol === 'Actividad a definir';
+
+    if (isBreak || isUndefined) {
+      return `
+        <div class="eyebrow">Ahora · ${myTeam}</div>
+        <div class="big">${isUndefined ? 'Actividad a definir' : 'Break ☕'}</div>
+        <div class="sub">${isUndefined ? 'Todavía no está visible la asignación para este bloque.' : 'En este bloque tu equipo no tiene una actividad asignada.'}</div>
+      `;
+    }
+
     const rolTexto = isFeedback ? 'Das feedback a' : 'Testeás';
 
     return `
       <div class="eyebrow">Ahora · ${myTeam}</div>
       <div class="big">Aula ${escapeHTML(nowAction.aula)} · ${escapeHTML(rolTexto)}</div>
       <div class="sub">
-        ${isFeedback ? `<strong>${escapeHTML(nowAction.detalle)}</strong>` : 'Tu equipo y vos ponen a prueba el prototipo'}
+        ${isFeedback ? `<strong>${escapeHTML(nowAction.detalle)}</strong>` : `${escapeHTML(teamName(app.selectedTeam))} pone a prueba el prototipo`}
       </div>
     `;
   }
@@ -1097,14 +1235,17 @@ function renderMyNow(nowAction, nextAction, actions = []) {
 
     if (isToday) {
       const isFeedback = nextAction.rol === 'Das feedback';
-      const rolTexto = isFeedback ? 'Das feedback a' : 'Testeás';
+      const isBreak = nextAction.rol === 'Break';
+      const isUndefined = nextAction.rol === 'Actividad a definir';
+      const rolTexto = isFeedback ? 'Das feedback a' : nextAction.rol;
+      const nextPlace = nextAction.aula ? ` · Aula ${escapeHTML(nextAction.aula)}` : '';
 
       return `
         <div class="eyebrow">Ahora tenés break ☕ · ${myTeam}</div>
         <div class="next-block-label">Próximo bloque</div>
-        <div class="big">⏭️ ${escapeHTML(blockLabel(nextAction))} · Aula ${escapeHTML(nextAction.aula)}</div>
+        <div class="big">⏭️ ${escapeHTML(blockLabel(nextAction))}${nextPlace}</div>
         <div class="sub">
-          ${isFeedback ? `👈 ${escapeHTML(rolTexto)} <strong>${escapeHTML(nextAction.detalle)}</strong>` : `📱 ${escapeHTML(rolTexto)}`}
+          ${isFeedback ? `👈 ${escapeHTML(rolTexto)} <strong>${escapeHTML(nextAction.detalle)}</strong>` : isUndefined ? 'Actividad a definir' : isBreak ? 'Break' : `📱 ${escapeHTML(rolTexto)}`}
         </div>
       `;
     }
@@ -1167,17 +1308,7 @@ function renderMyAgenda(actions) {
 
       if (action) return action;
 
-      return {
-        fecha: block.fecha,
-        fechaKey: block.fechaKey,
-        horaInicio: block.horaInicio,
-        horaCierre: block.horaCierre,
-        startDateTime: blockDateTime(block, 'inicio'),
-        endDateTime: blockDateTime(block, 'cierre'),
-        aula: '',
-        rol: 'Break',
-        detalle: ''
-      };
+      return placeholderActionForBlock(block);
     });
 
     return `
@@ -1240,12 +1371,13 @@ function renderAction(action) {
   const past = isActionPast(action);
   const isFeedback = action.rol === 'Das feedback';
   const isBreak = action.rol === 'Break';
+  const isUndefined = action.rol === 'Actividad a definir';
 
-  if (isBreak) {
+  if (isBreak || isUndefined) {
     return `
       <div class="agenda-item ${now ? 'now' : ''} ${past ? 'is-past' : ''} is-break">
         <div class="agenda-main-row">
-          <div class="agenda-main">☕ ${escapeHTML(blockLabel(action))} · Break</div>
+          <div class="agenda-main">${isUndefined ? '🕓' : '☕'} ${escapeHTML(blockLabel(action))} · ${isUndefined ? 'Actividad a definir' : 'Break'}</div>
           ${now ? `<span class="live-badge agenda-live-badge" aria-label="Bloque en vivo"><span class="live-badge-dot">🔴</span><span class="live-badge-text">Ahora</span></span>` : ''}
           ${past ? `<span class="done-check" aria-label="Bloque realizado">✓</span>` : ''}
         </div>
@@ -1277,7 +1409,7 @@ function renderAction(action) {
         <span class="agenda-action-emoji">📱</span>
         <span class="agenda-action-content">
           <span>Testeás</span>
-          <span class="sub">Tu equipo y vos ponen a prueba el prototipo</span>
+          <span class="sub">${escapeHTML(teamName(app.selectedTeam))} pone a prueba el prototipo</span>
         </span>
       </div>
     </div>
@@ -1285,14 +1417,26 @@ function renderAction(action) {
 }
 
 function renderTexts() {
+  const section = document.getElementById('aclaraciones');
   const box = document.getElementById('texts');
+  if (!box) return;
 
-  if (!app.texts.length) {
-    box.innerHTML = `<div class="text-item">No hay aclaraciones cargadas.</div>`;
+  if (!aclaracionesVisible()) {
+    if (section) section.hidden = true;
+    box.innerHTML = '';
     return;
   }
 
-  box.innerHTML = app.texts.map(item => `
+  if (section) section.hidden = false;
+
+  const visibleTexts = app.texts.filter(item => item.visible);
+
+  if (!visibleTexts.length) {
+    box.innerHTML = `<div class="text-item">No hay aclaraciones visibles.</div>`;
+    return;
+  }
+
+  box.innerHTML = visibleTexts.map(item => `
     <div class="text-item">${formatText(item.texto)}</div>
   `).join('');
 }
@@ -1324,7 +1468,7 @@ function myActions(teamId) {
       });
     }
 
-    if (row.feedbacks.includes(teamId)) {
+    if (feedbackAssignmentsVisible() && row.feedbacks.includes(teamId)) {
       actions.push({
         fecha: row.fecha,
         fechaKey: row.fechaKey,
@@ -1347,12 +1491,33 @@ function myActions(teamId) {
 }
 
 function currentActionForTeam(teamId) {
-  return myActions(teamId).find(action => isActionNow(action)) || null;
+  const action = myActions(teamId).find(action => isActionNow(action));
+  if (action) return action;
+
+  const currentBlock = app.allBlocks.find(block => {
+    const start = blockDateTime(block, 'inicio');
+    const end = blockDateTime(block, 'cierre');
+    const now = currentDateTime();
+    return start && end && now >= start && now < end;
+  });
+
+  return currentBlock ? placeholderActionForBlock(currentBlock) : null;
 }
 
 function nextActionForTeam(teamId) {
   const now = currentDateTime();
-  return myActions(teamId).find(action => action.startDateTime && action.startDateTime > now) || null;
+  const actions = myActions(teamId);
+  const nextVisibleAction = actions.find(action => action.startDateTime && action.startDateTime > now);
+  if (nextVisibleAction) return nextVisibleAction;
+
+  if (!feedbackExists() || feedbackAssignmentsVisible()) return null;
+
+  const nextBlock = app.allBlocks.find(block => {
+    const start = blockDateTime(block, 'inicio');
+    return start && start > now;
+  });
+
+  return nextBlock ? placeholderActionForBlock(nextBlock) : null;
 }
 
 function currentRows() {
@@ -1526,9 +1691,58 @@ function teamLabel(id, showTopic = true) {
 }
 
 
+
+function isTrue(value) {
+  return String(value || '').trim().toUpperCase() === 'TRUE';
+}
+
+function settingIsTrue(key) {
+  return isTrue(app.settings[key]);
+}
+
+function feedbackExists() {
+  return settingIsTrue('hay_feedback');
+}
+
+function feedbackAssignmentsVisible() {
+  return feedbackExists() && settingIsTrue('feedback_visible');
+}
+
+function feedbackFormVisible() {
+  return feedbackExists() && settingIsTrue('form_feedback_visible');
+}
+
+function cuestionarioFormVisible() {
+  return settingIsTrue('form_cuestionario_visible');
+}
+
+function aclaracionesVisible() {
+  return settingIsTrue('aclaraciones_visible');
+}
+
+function placeholderRoleForHiddenBlock() {
+  return feedbackExists() && !feedbackAssignmentsVisible()
+    ? 'Actividad a definir'
+    : 'Break';
+}
+
+function placeholderActionForBlock(block) {
+  return {
+    fecha: block.fecha,
+    fechaKey: block.fechaKey,
+    horaInicio: block.horaInicio,
+    horaCierre: block.horaCierre,
+    startDateTime: blockDateTime(block, 'inicio'),
+    endDateTime: blockDateTime(block, 'cierre'),
+    aula: '',
+    rol: placeholderRoleForHiddenBlock(),
+    detalle: ''
+  };
+}
+
 function teamInRow(teamId, row) {
   if (!teamId) return false;
-  return row.testea === teamId || row.feedbacks.includes(teamId);
+  return row.testea === teamId || (feedbackAssignmentsVisible() && row.feedbacks.includes(teamId));
 }
 
 function isSelectedTeam(id) {
@@ -1716,15 +1930,18 @@ function closeHeaderMenu() {
 }
 
 function setupQrLightbox() {
-  const button = document.getElementById('qr-button');
   const lightbox = document.getElementById('qr-lightbox');
   const image = document.getElementById('qr-image');
 
-  if (!button || !lightbox || !image) return;
+  if (!lightbox || !image) return;
 
   updateQrData();
 
-  button.addEventListener('click', () => {
+  document.addEventListener('click', event => {
+    const button = event.target.closest('#qr-button');
+    if (!button) return;
+
+    if (!cuestionarioFormVisible()) return;
     closeHeaderMenu();
     updateQrData();
     lightbox.hidden = false;
@@ -1744,13 +1961,15 @@ function setupQrLightbox() {
 }
 
 function updateQrData() {
+  const showCuestionario = cuestionarioFormVisible();
   const cuestionario = app.links.cuestionario || {};
   const image = document.getElementById('qr-image');
   const qrButton = document.getElementById('qr-button');
   const qrUrl = document.getElementById('qr-url');
   const copyButton = document.getElementById('qr-copy-link');
 
-  const cuestionarioUrl = String(cuestionario.url || '').trim();
+
+  const cuestionarioUrl = showCuestionario ? String(cuestionario.url || '').trim() : '';
   const staticSources = driveUrlToImageSources(cuestionario.url_qr || '');
   const forceStatic = String(cuestionario.forzar_url_qr || '').trim().toUpperCase() === 'TRUE';
   const automaticSources = cuestionarioUrl
