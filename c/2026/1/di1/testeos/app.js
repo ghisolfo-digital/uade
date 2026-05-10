@@ -1008,17 +1008,32 @@ function updateQrData() {
   const cuestionario = app.links.cuestionario || {};
   const image = document.getElementById('qr-image');
   const qrButton = document.getElementById('qr-button');
+  const qrUrl = document.getElementById('qr-url');
 
   const imageUrl = driveUrlToImageUrl(cuestionario.url_qr || '');
+  const cuestionarioUrl = String(cuestionario.url || '').trim();
 
   if (image) {
     image.src = imageUrl;
     image.hidden = !imageUrl;
   }
 
+  if (qrUrl) {
+    if (cuestionarioUrl) {
+      qrUrl.href = cuestionarioUrl;
+      qrUrl.textContent = cuestionarioUrl;
+      qrUrl.hidden = false;
+    } else {
+      qrUrl.href = '#';
+      qrUrl.textContent = '';
+      qrUrl.hidden = true;
+    }
+  }
+
   if (qrButton) {
-    qrButton.style.opacity = imageUrl ? '1' : '.45';
-    qrButton.style.pointerEvents = imageUrl ? 'auto' : 'none';
+    const enabled = Boolean(imageUrl || cuestionarioUrl);
+    qrButton.style.opacity = enabled ? '1' : '.45';
+    qrButton.style.pointerEvents = enabled ? 'auto' : 'none';
   }
 }
 
@@ -1027,13 +1042,11 @@ function driveUrlToImageUrl(url) {
   if (!raw) return '';
 
   const fileMatch = raw.match(/\/file\/d\/([^/]+)/);
-  if (fileMatch && fileMatch[1]) {
-    return `https://drive.google.com/uc?export=view&id=${fileMatch[1]}`;
-  }
-
   const idMatch = raw.match(/[?&]id=([^&]+)/);
-  if (idMatch && idMatch[1]) {
-    return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
+  const id = fileMatch?.[1] || idMatch?.[1] || '';
+
+  if (id) {
+    return `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=view`;
   }
 
   return raw;
