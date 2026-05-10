@@ -1327,6 +1327,32 @@ gap: 4px;
 }
 
 
+.header-feedback-btn:hover,
+.header-feedback-btn:focus-visible {
+  background: #ffffff;
+  color: var(--green-dark) !important;
+  border-color: rgba(255,255,255,.9);
+  box-shadow: 0 3px 10px rgba(0,0,0,.22);
+}
+
+.selected-team-pill {
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.selected-team-pill:hover,
+.selected-team-pill:focus-visible {
+  background: #ffffff;
+  color: #b00020;
+  border-color: #b00020;
+  box-shadow: 0 2px 8px rgba(176,0,32,.18);
+}
+
+.selected-team-pill:hover i,
+.selected-team-pill:focus-visible i {
+  color: #b00020;
+  opacity: 1;
+}
+
 @media (max-width: 640px) {
   .header-actions {
     justify-content: flex-start;
