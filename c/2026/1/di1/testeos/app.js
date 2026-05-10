@@ -692,28 +692,32 @@ function renderSelectedTeamBar() {
 
   inner.innerHTML = `
     ${app.selectedTeam ? `
-      <span class="selected-team-prefix">Estás viendo:</span>
-      <button id="clear-team-button" class="selected-team-pill" type="button" aria-label="Ver todos los equipos">
-        <span id="selected-team-text">${escapeHTML(teamNumber(app.selectedTeam))} · ${escapeHTML(teamName(app.selectedTeam))}</span>
-        <i class="ti ti-x"></i>
-      </button>
+      <span class="selected-context-group selected-context-team">
+        <span class="selected-team-prefix">Estás viendo:</span>
+        <button id="clear-team-button" class="selected-team-pill" type="button" aria-label="Ver todos los equipos">
+          <span id="selected-team-text">${escapeHTML(teamNumber(app.selectedTeam))} · ${escapeHTML(teamName(app.selectedTeam))}</span>
+          <i class="ti ti-x"></i>
+        </button>
+      </span>
     ` : ''}
 
     ${hasSimulation ? `
-      <span class="selected-team-separator">·</span>
-      <span class="simulation-prefix"><span aria-hidden="true">💡</span> Simulando:</span>
-      ${isSimulatingDate() ? `
-        <button id="clear-sim-date-button" class="selected-team-pill simulation-pill" type="button" aria-label="Quitar fecha simulada">
-          <span>${escapeHTML(dateText)}</span>
-          <i class="ti ti-x"></i>
-        </button>
-      ` : `<span class="simulation-plain">${escapeHTML(dateText)}</span>`}
-      ${isSimulatingTime() ? `
-        <button id="clear-sim-time-button" class="selected-team-pill simulation-pill" type="button" aria-label="Quitar hora simulada">
-          <span>${escapeHTML(timeText)}</span>
-          <i class="ti ti-x"></i>
-        </button>
-      ` : `<span class="simulation-plain">${escapeHTML(timeText)}</span>`}
+      ${app.selectedTeam ? `<span class="selected-team-separator">·</span>` : ''}
+      <span class="selected-context-group selected-context-simulation">
+        <span class="simulation-prefix"><span class="simulation-icon" aria-hidden="true">💡</span><span class="simulation-text">Simulando:</span></span>
+        ${isSimulatingDate() ? `
+          <button id="clear-sim-date-button" class="selected-team-pill simulation-pill" type="button" aria-label="Quitar fecha simulada">
+            <span>${escapeHTML(dateText)}</span>
+            <i class="ti ti-x"></i>
+          </button>
+        ` : `<span class="simulation-plain">${escapeHTML(dateText)}</span>`}
+        ${isSimulatingTime() ? `
+          <button id="clear-sim-time-button" class="selected-team-pill simulation-pill" type="button" aria-label="Quitar hora simulada">
+            <span>${escapeHTML(timeText)}</span>
+            <i class="ti ti-x"></i>
+          </button>
+        ` : `<span class="simulation-plain">${escapeHTML(timeText)}</span>`}
+      </span>
     ` : ''}
   `;
 
@@ -876,7 +880,10 @@ function renderCurrentStatus() {
 
     return `
       <div class="card status-card ${selectedIsHere ? 'current-for-team' : ''}">
-<div class="eyebrow">Aula <span class="aula-code">${escapeHTML(row.aula)}</span> · ${blockLabelHTML(row)}</div>
+<div class="eyebrow status-eyebrow">
+  <span>Aula <span class="aula-code">${escapeHTML(row.aula)}</span> · ${blockLabelHTML(row)}</span>
+  <span class="live-badge status-live-badge" aria-label="Bloque en vivo"><span class="live-badge-dot">🔴</span><span class="live-badge-text">Ahora</span></span>
+</div>
 
         <div class="now-testing-line team-label-large">
           <span aria-hidden="true">📱</span>

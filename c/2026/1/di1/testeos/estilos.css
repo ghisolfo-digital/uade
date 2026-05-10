@@ -1935,3 +1935,122 @@ gap: 4px;
     bottom: calc(var(--footer-h) + 12px);
   }
 }
+
+/* ================= AJUSTES FINALES SOBRE PEDIDO ================= */
+
+/* Evita la barra horizontal mínima en desktop sin afectar el layout visual */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Barra de simulación / equipo: grupos más controlados */
+.selected-context-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.simulation-prefix {
+  gap: 5px;
+}
+
+.simulation-text {
+  white-space: nowrap;
+}
+
+/* Hover completo de barras negras plegables, sin sumar ancho extra */
+.date-grid-toggle {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.date-grid-toggle:hover,
+.date-grid-toggle:focus-visible {
+  background: rgba(255,255,255,.24);
+}
+
+.date-grid-toggle-icon,
+.my-date-toggle-icon {
+  font-size: 1.9rem;
+  line-height: .8;
+}
+
+.date-grid-group.is-collapsed .date-grid-title.section-band {
+  background: #29342d;
+}
+
+.date-grid-group.is-collapsed .date-grid-toggle:hover,
+.date-grid-group.is-collapsed .date-grid-toggle:focus-visible {
+  background: rgba(255,255,255,.20);
+}
+
+/* Badge "Ahora" también en las tarjetas superiores de estado actual */
+.status-eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.status-live-badge {
+  background: rgba(255,255,255,.94);
+  border: 1px solid rgba(255,255,255,.72);
+  border-radius: 999px;
+  padding: 5px 8px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.18);
+  flex: 0 0 auto;
+}
+
+.status-live-badge .live-badge-text {
+  color: #b00020;
+}
+
+.status-live-badge .live-badge-dot {
+  filter: drop-shadow(0 0 5px rgba(176,0,32,.65));
+}
+
+/* Check con sombra un poco más difuminada */
+.done-check {
+  box-shadow:
+    0 7px 18px rgba(46,125,50,.52),
+    0 0 0 2px rgba(255,255,255,.95),
+    0 0 18px rgba(46,125,50,.42);
+}
+
+@media (max-width: 640px) {
+  .selected-team-inner {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 6px;
+  }
+
+  .selected-team-separator {
+    display: none;
+  }
+
+  .selected-context-group {
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .selected-context-team,
+  .selected-context-simulation {
+    grid-column: 1;
+  }
+
+  .status-eyebrow {
+    align-items: flex-start;
+  }
+
+  .status-live-badge {
+    padding: 4px 7px;
+  }
+}
