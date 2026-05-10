@@ -370,16 +370,30 @@ function formatTimeUntil(targetDate) {
   if (diffMs <= 0) return '';
 
   const totalMinutes = Math.ceil(diffMs / 60000);
-  const days = Math.floor(totalMinutes / (60 * 24));
-  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-  const minutes = totalMinutes % 60;
+  const hours = Math.floor(totalMinutes / 60);
 
-  if (days > 1) {
-    return `Faltan ${days} días para la clase de testeos.`;
+  const todayStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+
+  const targetStart = new Date(
+    targetDate.getFullYear(),
+    targetDate.getMonth(),
+    targetDate.getDate()
+  );
+
+  const calendarDays = Math.round(
+    (targetStart - todayStart) / (1000 * 60 * 60 * 24)
+  );
+
+  if (calendarDays > 1) {
+    return `Faltan ${calendarDays} días para el primer bloque.`;
   }
 
-  if (days === 1) {
-    return `Falta 1 día para la clase de testeos.`;
+  if (calendarDays === 1) {
+    return `Falta 1 día para el primer bloque.`;
   }
 
   if (hours > 1) {
@@ -390,11 +404,7 @@ function formatTimeUntil(targetDate) {
     return `Falta 1 hora para el primer bloque.`;
   }
 
-  if (minutes > 1) {
-    return `Faltan ${minutes} minutos para el primer bloque.`;
-  }
-
-  return `Falta menos de 1 minuto para el primer bloque.`;
+  return `Falta menos de 1 hora para el primer bloque.`;
 }
 
 function testDateStatus() {
