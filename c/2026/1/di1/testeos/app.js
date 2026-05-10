@@ -246,17 +246,72 @@ function renderClockTitle() {
   if (el) el.textContent = currentClockLabel();
 }
 
-    function renderHeader() {
-      document.title = app.config.titulo || 'Testeos UX';
+function renderHeader() {
+  document.title = app.config.titulo || 'Testeos UX';
 
-      const title = document.getElementById('site-title');
-      const meta = document.getElementById('site-meta');
-      const subtitle = document.getElementById('site-subtitle');
+  document.getElementById('site-title').textContent =
+    app.config.titulo || 'Testeos UX';
 
-      if (title) title.textContent = app.config.titulo || 'Testeos UX';
-      if (meta) meta.textContent = app.config.bajada || '';
-      if (subtitle) subtitle.textContent = app.config.txt_intro || '';
-    }
+  const meta = document.querySelector('.site-header .meta');
+  if (meta) {
+    meta.textContent = buildHeaderMetaText();
+  }
+
+  const intro = document.getElementById('site-subtitle');
+  if (intro) {
+    intro.textContent = app.config.txt_intro || '';
+  }
+}
+
+function buildHeaderMetaText() {
+  const universidad = app.config.universidad || '';
+  const materia = app.config.materia || '';
+  const fecha = formatDateWithWeekday(app.config.fecha || '');
+  const turno = app.config.turno || '';
+
+  const bloquePrincipal = [materia, fecha]
+    .filter(Boolean)
+    .join(' · ');
+
+  const bloqueFallback = [universidad, turno]
+    .filter(Boolean)
+    .join(' · ');
+
+  return bloquePrincipal || bloqueFallback;
+}
+
+function formatDateWithWeekday(value) {
+  const raw = String(value || '').trim();
+  const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+  if (!match) return raw;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return raw;
+  }
+
+  const weekdays = [
+    'Domingo',
+    'Lunes',
+    'Martes',
+    'Miércoles',
+    'Jueves',
+    'Viernes',
+    'Sábado'
+  ];
+
+  return `${weekdays[date.getDay()]} ${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+}
 
 
 function renderSelectedTeamBar() {
