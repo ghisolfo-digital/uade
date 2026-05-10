@@ -1183,7 +1183,7 @@ function renderMyAgenda(actions) {
     return `
       <div class="card my-date-card ${open ? 'is-open' : 'is-collapsed'}" data-my-date-card="${escapeHTML(fechaKey)}">
         <button class="my-date-toggle" type="button" data-toggle-my-date="${escapeHTML(fechaKey)}" aria-expanded="${open ? 'true' : 'false'}">
-          <span>${escapeHTML(title)}</span>
+          <span><span class="my-date-title-emoji" aria-hidden="true">💼</span> ${escapeHTML(title)}</span>
           <span class="my-date-toggle-icon" aria-hidden="true">${open ? '▴' : '▾'}</span>
         </button>
         <div class="my-date-content" ${open ? '' : 'hidden'}>
@@ -1246,13 +1246,14 @@ function renderAction(action) {
       <div class="agenda-item ${now ? 'now' : ''} ${past ? 'is-past' : ''} is-break">
         <div class="agenda-main-row">
           <div class="agenda-main">☕ ${escapeHTML(blockLabel(action))} · Break</div>
+          ${now ? `<span class="live-badge agenda-live-badge" aria-label="Bloque en vivo"><span class="live-badge-dot">🔴</span><span class="live-badge-text">Ahora</span></span>` : ''}
           ${past ? `<span class="done-check" aria-label="Bloque realizado">✓</span>` : ''}
         </div>
       </div>
     `;
   }
 
-  const main = `<div class="agenda-main-row"><div class="agenda-main">🕒 ${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>${past ? `<span class="done-check" aria-label="Bloque realizado">✓</span>` : ''}</div>`;
+  const main = `<div class="agenda-main-row"><div class="agenda-main">🕒 ${escapeHTML(blockLabel(action))} · Aula ${escapeHTML(action.aula)}</div>${now ? `<span class="live-badge agenda-live-badge" aria-label="Bloque en vivo"><span class="live-badge-dot">🔴</span><span class="live-badge-text">Ahora</span></span>` : ''}${past ? `<span class="done-check" aria-label="Bloque realizado">✓</span>` : ''}</div>`;
 
   if (isFeedback) {
     return `
@@ -1753,7 +1754,7 @@ function updateQrData() {
   const staticSources = driveUrlToImageSources(cuestionario.url_qr || '');
   const forceStatic = String(cuestionario.forzar_url_qr || '').trim().toUpperCase() === 'TRUE';
   const automaticSources = cuestionarioUrl
-    ? [`https://api.qrserver.com/v1/create-qr-code/?size=900x900&margin=1&ecc=L&data=${encodeURIComponent(cuestionarioUrl)}`]
+    ? [`https://api.qrserver.com/v1/create-qr-code/?size=900x900&margin=4&ecc=L&data=${encodeURIComponent(cuestionarioUrl)}`]
     : [];
 
   const imageSources = forceStatic

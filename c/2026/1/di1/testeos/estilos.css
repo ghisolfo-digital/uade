@@ -2054,3 +2054,97 @@ body {
     padding: 4px 7px;
   }
 }
+
+
+/* ================= AJUSTES DE ÚLTIMA PASADA ================= */
+
+/* Sticky reforzado: usar clip evita que overflow-x rompa sticky en algunos navegadores */
+html,
+body {
+  overflow-x: clip;
+}
+
+.site-header,
+.header-sticky {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 4000;
+}
+
+.header-main {
+  padding-bottom: 0;
+}
+
+.header-wrap {
+  padding-bottom: 12px;
+}
+
+/* Títulos plegables de grilla: misma altura visual que el resto, con flecha grande sin agrandar la barra */
+.date-grid-title.section-band {
+  padding: 0;
+}
+
+.date-grid-toggle {
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 9px 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.date-grid-toggle-inner {
+  position: relative;
+  align-items: center;
+  padding-right: 48px;
+}
+
+.date-grid-toggle-icon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2.05rem;
+  line-height: .65;
+}
+
+/* Badge actual también en Mi equipo */
+.agenda-live-badge {
+  flex: 0 0 auto;
+  background: #fff;
+  border: 1px solid rgba(176,0,32,.18);
+  border-radius: 999px;
+  padding: 5px 8px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.08);
+}
+
+.agenda-main-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.agenda-main-row .agenda-live-badge + .done-check {
+  right: 44px;
+}
+
+.my-date-title-emoji {
+  display: inline-block;
+  transform: translateY(.02em);
+}
+
+/* QR: más aire visual de contenedor, además del margen interno generado por JS */
+.qr-image-wrap {
+  padding: 10px;
+}
+
+/* Fallback para navegadores sin overflow: clip */
+@supports not (overflow: clip) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+}
