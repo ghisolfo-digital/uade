@@ -247,7 +247,7 @@ function renderClockTitle() {
 }
 
 function renderHeader() {
-  document.title = app.config.titulo || 'Testeos UX';
+  document.title = buildDocumentTitle();
 
   document.getElementById('site-title').textContent =
     app.config.titulo || 'Testeos UX';
@@ -261,6 +261,29 @@ function renderHeader() {
   if (intro) {
     intro.textContent = app.config.txt_intro || '';
   }
+}
+
+function buildDocumentTitle() {
+  const titulo = app.config.titulo || 'Testeos UX';
+  const materia = app.config.materia || '';
+  const fecha = formatDateForTitle(app.config.fecha || '');
+
+  return [titulo, materia, fecha, '@ghisolfo.digital']
+    .filter(Boolean)
+    .join(' - ');
+}
+
+function formatDateForTitle(value) {
+  const raw = String(value || '').trim();
+  const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+  if (!match) return raw;
+
+  const day = String(Number(match[1])).padStart(2, '0');
+  const month = String(Number(match[2])).padStart(2, '0');
+  const year = match[3];
+
+  return `${day}/${month}/${year}`;
 }
 
 function buildHeaderMetaText() {
