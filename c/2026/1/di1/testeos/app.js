@@ -664,6 +664,16 @@ function testDateStatus() {
   return 'active-day';
 }
 
+function isInsideGlobalTestWindow() {
+  const firstBlockDateTime = getFirstBlockDateTime();
+  const lastBlockDateTime = getLastBlockDateTime();
+
+  if (!firstBlockDateTime || !lastBlockDateTime) return false;
+
+  const now = currentDateTime();
+  return now >= firstBlockDateTime && now < lastBlockDateTime;
+}
+
 function isTestDateToday() {
   return isAnyAgendaDateToday();
 }
@@ -1230,9 +1240,15 @@ function renderMyNow(nowAction, nextAction, actions = []) {
       const isUndefined = nextAction.rol === 'Actividad a definir';
       const rolTexto = isFeedback ? (nextAction.detalle ? 'Das feedback a' : 'Das feedback') : nextAction.rol;
       const nextPlace = nextAction.aula ? ` · ${escapeHTML(aulaLabel(nextAction.aula))}` : '';
+      const isBeforeGlobalStart = testDateStatus() === 'future';
+      const eyebrowText = isInsideGlobalTestWindow()
+        ? `Ahora tenés break ☕ · ${myTeam}`
+        : myTeam;
+      const beforeStartSub = isBeforeGlobalStart ? `<div class="sub">Todavía no empezó el primer bloque.</div>` : '';
 
       return `
-        <div class="eyebrow">Ahora tenés break ☕ · ${myTeam}</div>
+        <div class="eyebrow">${eyebrowText}</div>
+        ${beforeStartSub}
         <div class="next-block-label">Próximo bloque</div>
         <div class="big">⏭️ ${escapeHTML(blockLabel(nextAction))}${nextPlace}</div>
         <div class="sub">
