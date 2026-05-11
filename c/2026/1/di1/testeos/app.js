@@ -299,7 +299,7 @@ function renderHeader() {
 
   const intro = document.getElementById('site-subtitle');
   if (intro) {
-    intro.textContent = app.config.txt_intro || '';
+    intro.textContent = buildIntroText();
   }
 }
 
@@ -321,6 +321,21 @@ function renderFavicons() {
 
 function removeDynamicFavicons() {
   document.querySelectorAll('link[data-dynamic-favicon]').forEach(el => el.remove());
+}
+
+
+function buildIntroText() {
+  const text = String(app.config.txt_intro || '').trim();
+  if (!text) return '';
+
+  if (feedbackExists() && !feedbackActivityVisible()) {
+    const updated = text
+      .replace(/,?\s*y\s+cu[aá]ndo\s+le\s+ten[eé]s\s+que\s+dar\s+feedback\s+a\s+otros\s+equipos\.?/i, '. En breve vas a saber cuándo le tenés que dar feedback a otros equipos.');
+
+    if (updated !== text) return updated;
+  }
+
+  return text;
 }
 
 function buildDocumentTitle() {
@@ -1216,19 +1231,19 @@ function renderMyNow(nowAction, nextAction, actions = []) {
       return `
         <div class="eyebrow">Ahora · ${myTeam}</div>
         <div class="big">${isUndefined ? 'Actividad a definir' : 'Break ☕'}</div>
-        <div class="sub">${isUndefined ? 'Todavía no está visible la asignación para este bloque.' : 'En este bloque tu equipo no tiene una actividad asignada.'}</div>
+        ${isUndefined ? '' : '<div class="sub">En este bloque tu equipo no tiene una actividad asignada.</div>'}
       `;
     }
 
     const rolTexto = isFeedback
-      ? (nowAction.detalle ? 'Das feedback a' : 'Das feedback')
+      ? (nowAction.detalle ? 'Das feedback a' : 'Das feedback a un equipo')
       : 'Testeás';
 
     return `
       <div class="eyebrow">Ahora · ${myTeam}</div>
       <div class="big">${escapeHTML(aulaLabel(nowAction.aula))} · ${escapeHTML(rolTexto)}</div>
       <div class="sub">
-        ${isFeedback ? (nowAction.detalle ? `<strong>${escapeHTML(nowAction.detalle)}</strong>` : 'Todavía no está visible a qué equipo le das feedback.') : `${escapeHTML(teamName(app.selectedTeam))} pone a prueba el prototipo`}
+        ${isFeedback ? (nowAction.detalle ? `<strong>${escapeHTML(nowAction.detalle)}</strong>` : '') : `${escapeHTML(teamName(app.selectedTeam))} pone a prueba el prototipo`}
       </div>
     `;
   }
@@ -1241,7 +1256,7 @@ function renderMyNow(nowAction, nextAction, actions = []) {
       const isBreak = nextAction.rol === 'Break';
       const isUndefined = nextAction.rol === 'Actividad a definir';
       const rolTexto = isFeedback
-        ? (nextAction.detalle ? 'Das feedback a' : 'Das feedback')
+        ? (nextAction.detalle ? 'Das feedback a' : 'Das feedback a un equipo')
         : nextAction.rol;
       const nextPlace = nextAction.aula ? ` · ${escapeHTML(aulaLabel(nextAction.aula))}` : '';
 
@@ -1399,8 +1414,8 @@ function renderAction(action) {
         <div class="agenda-action-row">
           <span class="agenda-action-emoji">👈</span>
           <span class="agenda-action-content">
-            <span>${action.detalle ? 'Das feedback a' : 'Das feedback'}</span>
-            ${action.detalle ? `<strong>${escapeHTML(action.detalle)}</strong>` : `<span class="sub">Todavía no está visible a qué equipo le das feedback.</span>`}
+            <span>${action.detalle ? 'Das feedback a' : 'Das feedback a un equipo'}</span>
+            ${action.detalle ? `<strong>${escapeHTML(action.detalle)}</strong>` : ''}
           </span>
         </div>
       </div>
@@ -1727,7 +1742,7 @@ function feedbackAssignmentsVisible() {
 }
 
 function feedbackActivityVisible() {
-  return feedbackExists() && (feedbackAssignmentsVisible() || settingIsTrue('actividad_visible'));
+  return feedbackExists() && settingIsTrue('actividad_visible');
 }
 
 function feedbackFormVisible() {
