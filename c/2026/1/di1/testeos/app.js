@@ -806,7 +806,81 @@ function setElementVisible(el, visible) {
   el.style.display = visible ? '' : 'none';
 }
 
+function ensureActionControls() {
+  const headerActions = document.querySelector('.header-actions');
+  const menuButton = document.getElementById('menu-button');
+
+  if (headerActions && !document.getElementById('header-feedback-link')) {
+    const link = document.createElement('a');
+    link.className = 'header-feedback-btn';
+    link.id = 'header-feedback-link';
+    link.href = '#';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'Form de feedback';
+
+    if (menuButton) {
+      headerActions.insertBefore(link, menuButton);
+    } else {
+      headerActions.appendChild(link);
+    }
+  }
+
+  const menu = document.getElementById('header-menu');
+  if (!menu) return;
+
+  let menuActions = menu.querySelector('.menu-actions');
+  if (!menuActions) {
+    menuActions = document.createElement('div');
+    menuActions.className = 'menu-actions';
+    menu.appendChild(menuActions);
+  }
+
+  if (!menuActions.querySelector('.menu-separator')) {
+    const separator = document.createElement('div');
+    separator.className = 'menu-separator';
+    menuActions.appendChild(separator);
+  }
+
+  if (!document.getElementById('share-button')) {
+    const button = document.createElement('button');
+    button.className = 'menu-link menu-link-button';
+    button.id = 'share-button';
+    button.type = 'button';
+    button.innerHTML = '<i class="ti ti-share-3"></i> Compartir esta app';
+    menuActions.appendChild(button);
+  }
+
+  if (!document.getElementById('feedback-link')) {
+    const link = document.createElement('a');
+    link.className = 'menu-feedback-btn';
+    link.id = 'feedback-link';
+    link.href = '#';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'Form de feedback';
+
+    const qrButton = document.getElementById('qr-button');
+    if (qrButton && qrButton.parentElement === menuActions) {
+      menuActions.insertBefore(link, qrButton);
+    } else {
+      menuActions.appendChild(link);
+    }
+  }
+
+  if (!document.getElementById('qr-button')) {
+    const button = document.createElement('button');
+    button.className = 'menu-link menu-link-button';
+    button.id = 'qr-button';
+    button.type = 'button';
+    button.innerHTML = '<i class="ti ti-qrcode"></i> Ver código QR para usuarios';
+    menuActions.appendChild(button);
+  }
+}
+
 function renderLinks() {
+  ensureActionControls();
+
   const showFeedbackForm = feedbackFormVisible();
   const feedbackHeaderLink = document.getElementById('header-feedback-link');
   const feedbackMenuLink = document.getElementById('feedback-link');
