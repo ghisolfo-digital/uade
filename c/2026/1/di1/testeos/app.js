@@ -1220,13 +1220,15 @@ function renderMyNow(nowAction, nextAction, actions = []) {
       `;
     }
 
-    const rolTexto = isFeedback ? 'Das feedback a' : 'Testeás';
+    const rolTexto = isFeedback
+      ? (nowAction.detalle ? 'Das feedback a' : 'Das feedback')
+      : 'Testeás';
 
     return `
       <div class="eyebrow">Ahora · ${myTeam}</div>
       <div class="big">${escapeHTML(aulaLabel(nowAction.aula))} · ${escapeHTML(rolTexto)}</div>
       <div class="sub">
-        ${isFeedback ? `<strong>${escapeHTML(nowAction.detalle)}</strong>` : `${escapeHTML(teamName(app.selectedTeam))} pone a prueba el prototipo`}
+        ${isFeedback ? (nowAction.detalle ? `<strong>${escapeHTML(nowAction.detalle)}</strong>` : 'Todavía no está visible a qué equipo le das feedback.') : `${escapeHTML(teamName(app.selectedTeam))} pone a prueba el prototipo`}
       </div>
     `;
   }
@@ -1238,7 +1240,9 @@ function renderMyNow(nowAction, nextAction, actions = []) {
       const isFeedback = nextAction.rol === 'Das feedback';
       const isBreak = nextAction.rol === 'Break';
       const isUndefined = nextAction.rol === 'Actividad a definir';
-      const rolTexto = isFeedback ? 'Das feedback a' : nextAction.rol;
+      const rolTexto = isFeedback
+        ? (nextAction.detalle ? 'Das feedback a' : 'Das feedback')
+        : nextAction.rol;
       const nextPlace = nextAction.aula ? ` · ${escapeHTML(aulaLabel(nextAction.aula))}` : '';
 
       return `
@@ -1246,7 +1250,7 @@ function renderMyNow(nowAction, nextAction, actions = []) {
         <div class="next-block-label">Próximo bloque</div>
         <div class="big">⏭️ ${escapeHTML(blockLabel(nextAction))}${nextPlace}</div>
         <div class="sub">
-          ${isFeedback ? `👈 ${escapeHTML(rolTexto)} <strong>${escapeHTML(nextAction.detalle)}</strong>` : isUndefined ? 'Actividad a definir' : isBreak ? 'Break' : `📱 ${escapeHTML(rolTexto)}`}
+          ${isFeedback ? `👈 ${escapeHTML(rolTexto)}${nextAction.detalle ? ` <strong>${escapeHTML(nextAction.detalle)}</strong>` : ''}` : isUndefined ? 'Actividad a definir' : isBreak ? 'Break' : `📱 ${escapeHTML(rolTexto)}`}
         </div>
       `;
     }
@@ -1395,8 +1399,8 @@ function renderAction(action) {
         <div class="agenda-action-row">
           <span class="agenda-action-emoji">👈</span>
           <span class="agenda-action-content">
-            <span>Das feedback a</span>
-            <strong>${escapeHTML(action.detalle)}</strong>
+            <span>${action.detalle ? 'Das feedback a' : 'Das feedback'}</span>
+            ${action.detalle ? `<strong>${escapeHTML(action.detalle)}</strong>` : `<span class="sub">Todavía no está visible a qué equipo le das feedback.</span>`}
           </span>
         </div>
       </div>
@@ -1469,7 +1473,7 @@ function myActions(teamId) {
       });
     }
 
-    if (feedbackAssignmentsVisible() && row.feedbacks.includes(teamId)) {
+    if (feedbackActivityVisible() && row.feedbacks.includes(teamId)) {
       actions.push({
         fecha: row.fecha,
         fechaKey: row.fechaKey,
@@ -1479,7 +1483,7 @@ function myActions(teamId) {
         endDateTime,
         aula: row.aula,
         rol: 'Das feedback',
-        detalle: plainTeamLabel(row.testea)
+        detalle: feedbackAssignmentsVisible() ? plainTeamLabel(row.testea) : ''
       });
     }
   });
@@ -1511,7 +1515,7 @@ function nextActionForTeam(teamId) {
   const nextVisibleAction = actions.find(action => action.startDateTime && action.startDateTime > now);
   if (nextVisibleAction) return nextVisibleAction;
 
-  if (!feedbackExists() || feedbackAssignmentsVisible()) return null;
+  if (!feedbackExists() || feedbackActivityVisible()) return null;
 
   const nextBlock = app.allBlocks.find(block => {
     const start = blockDateTime(block, 'inicio');
@@ -1722,6 +1726,10 @@ function feedbackAssignmentsVisible() {
   return feedbackExists() && settingIsTrue('feedback_visible');
 }
 
+function feedbackActivityVisible() {
+  return feedbackExists() && (feedbackAssignmentsVisible() || settingIsTrue('actividad_visible'));
+}
+
 function feedbackFormVisible() {
   return feedbackExists() && settingIsTrue('form_feedback_visible');
 }
@@ -1735,7 +1743,7 @@ function aclaracionesVisible() {
 }
 
 function placeholderRoleForHiddenBlock() {
-  return feedbackExists() && !feedbackAssignmentsVisible()
+  return feedbackExists() && !feedbackActivityVisible()
     ? 'Actividad a definir'
     : 'Break';
 }
@@ -1756,7 +1764,7 @@ function placeholderActionForBlock(block) {
 
 function teamInRow(teamId, row) {
   if (!teamId) return false;
-  return row.testea === teamId || (feedbackAssignmentsVisible() && row.feedbacks.includes(teamId));
+  return row.testea === teamId || (feedbackActivityVisible() && row.feedbacks.includes(teamId));
 }
 
 function isSelectedTeam(id) {
