@@ -254,6 +254,7 @@ function randomBetween(min, max) {
 
 function renderAll() {
   renderHeader();
+  renderFavicons();
   renderSelector();
   renderLinks();
   renderGrillaMenuLinks();
@@ -299,8 +300,56 @@ function renderHeader() {
 
   const intro = document.getElementById('site-subtitle');
   if (intro) {
-    intro.textContent = app.config.txt_intro || '';
+    intro.textContent = buildIntroText();
   }
+}
+
+
+function buildIntroText() {
+  const defaultIntro = 'Revisá en qué aula tenés que estar, cuándo testeás con tu equipo y cuándo le tenés que dar feedback a otros equipos.';
+  const rawIntro = String(app.config.txt_intro || '').trim();
+
+  if (rawIntro && rawIntro !== defaultIntro) {
+    return rawIntro;
+  }
+
+  if (!feedbackExists()) {
+    return 'Revisá en qué aula tenés que estar y cuándo testeás con tu equipo.';
+  }
+
+  if (feedbackDestinationVisible()) {
+    return defaultIntro;
+  }
+
+  if (feedbackActivityVisible()) {
+    return 'Revisá en qué aula tenés que estar, cuándo testeás con tu equipo y cuándo tenés que dar feedback.';
+  }
+
+  if (breakVisible()) {
+    return 'Revisá en qué aula tenés que estar, cuándo testeás con tu equipo y cuándo tenés break. Las demás actividades se informan más adelante.';
+  }
+
+  return 'Revisá en qué aula tenés que estar y cuándo testeás con tu equipo. Las demás actividades se informan más adelante.';
+}
+
+function renderFavicons() {
+  const rawPath = String(app.config.ruta_favicon || '').trim();
+
+  removeDynamicFavicons();
+
+  if (!rawPath) return;
+
+  const basePath = rawPath.endsWith('/') ? rawPath : rawPath + '/';
+
+  document.head.insertAdjacentHTML('beforeend', `
+    <link data-dynamic-favicon rel="icon" href="${escapeHTML(basePath)}favicon.svg" type="image/svg+xml">
+    <link data-dynamic-favicon rel="icon" href="${escapeHTML(basePath)}favicon.png" type="image/png">
+    <link data-dynamic-favicon rel="shortcut icon" href="${escapeHTML(basePath)}favicon.ico">
+  `);
+}
+
+function removeDynamicFavicons() {
+  document.querySelectorAll('link[data-dynamic-favicon]').forEach(el => el.remove());
 }
 
 function buildDocumentTitle() {
@@ -834,23 +883,32 @@ function setElementVisible(el, visible) {
 }
 
 function ensureActionControls() {
+  const showFeedbackForm = feedbackFormVisible();
+  const showCuestionario = cuestionarioFormVisible();
+  const showAclaraciones = aclaracionesVisible();
+
   const headerActions = document.querySelector('.header-actions');
   const menuButton = document.getElementById('menu-button');
 
-  if (headerActions && !document.getElementById('header-feedback-link')) {
-    const link = document.createElement('a');
-    link.className = 'header-feedback-btn';
-    link.id = 'header-feedback-link';
-    link.href = '#';
-    link.target = '_blank';
-    link.rel = 'noopener';
-    link.textContent = 'Form de feedback';
+  let headerFeedback = document.getElementById('header-feedback-link');
+  if (showFeedbackForm) {
+    if (headerActions && !headerFeedback) {
+      headerFeedback = document.createElement('a');
+      headerFeedback.className = 'header-feedback-btn';
+      headerFeedback.id = 'header-feedback-link';
+      headerFeedback.href = '#';
+      headerFeedback.target = '_blank';
+      headerFeedback.rel = 'noopener';
+      headerFeedback.textContent = 'Form de feedback';
 
-    if (menuButton) {
-      headerActions.insertBefore(link, menuButton);
-    } else {
-      headerActions.appendChild(link);
+      if (menuButton) {
+        headerActions.insertBefore(headerFeedback, menuButton);
+      } else {
+        headerActions.appendChild(headerFeedback);
+      }
     }
+  } else if (headerFeedback) {
+    headerFeedback.remove();
   }
 
   const menu = document.getElementById('header-menu');
@@ -863,10 +921,21 @@ function ensureActionControls() {
     menu.appendChild(menuActions);
   }
 
-  if (!menuActions.querySelector('.menu-separator')) {
-    const separator = document.createElement('div');
-    separator.className = 'menu-separator';
-    menuActions.appendChild(separator);
+  let aclaracionesLink = document.getElementById('menu-aclaraciones-link') || menu.querySelector('a[href="#aclaraciones"]');
+  if (showAclaraciones) {
+    if (!aclaracionesLink) {
+      aclaracionesLink = document.createElement('a');
+      aclaracionesLink.className = 'menu-link';
+      aclaracionesLink.id = 'menu-aclaraciones-link';
+      aclaracionesLink.href = '#aclaraciones';
+      aclaracionesLink.setAttribute('data-section-link', 'aclaraciones');
+      aclaracionesLink.textContent = 'Aclaraciones';
+      menu.insertBefore(aclaracionesLink, menuActions);
+    } else {
+      aclaracionesLink.id = 'menu-aclaraciones-link';
+    }
+  } else if (aclaracionesLink) {
+    aclaracionesLink.remove();
   }
 
   if (!document.getElementById('share-button')) {
@@ -878,56 +947,61 @@ function ensureActionControls() {
     menuActions.appendChild(button);
   }
 
-  if (!document.getElementById('feedback-link')) {
-    const link = document.createElement('a');
-    link.className = 'menu-feedback-btn';
-    link.id = 'feedback-link';
-    link.href = '#';
-    link.target = '_blank';
-    link.rel = 'noopener';
-    link.textContent = 'Form de feedback';
-
-    const qrButton = document.getElementById('qr-button');
-    if (qrButton && qrButton.parentElement === menuActions) {
-      menuActions.insertBefore(link, qrButton);
-    } else {
-      menuActions.appendChild(link);
+  let feedbackLink = document.getElementById('feedback-link');
+  if (showFeedbackForm) {
+    if (!feedbackLink) {
+      feedbackLink = document.createElement('a');
+      feedbackLink.className = 'menu-feedback-btn';
+      feedbackLink.id = 'feedback-link';
+      feedbackLink.href = '#';
+      feedbackLink.target = '_blank';
+      feedbackLink.rel = 'noopener';
+      feedbackLink.textContent = 'Form de feedback';
+      menuActions.appendChild(feedbackLink);
     }
+  } else if (feedbackLink) {
+    feedbackLink.remove();
   }
 
-  if (!document.getElementById('qr-button')) {
-    const button = document.createElement('button');
-    button.className = 'menu-link menu-link-button';
-    button.id = 'qr-button';
-    button.type = 'button';
-    button.innerHTML = '<i class="ti ti-qrcode"></i> Ver código QR para usuarios';
-    menuActions.appendChild(button);
+  let qrButton = document.getElementById('qr-button');
+  if (showCuestionario) {
+    if (!qrButton) {
+      qrButton = document.createElement('button');
+      qrButton.className = 'menu-link menu-link-button';
+      qrButton.id = 'qr-button';
+      qrButton.type = 'button';
+      qrButton.innerHTML = '<i class="ti ti-qrcode"></i> Ver código QR para usuarios';
+      menuActions.appendChild(qrButton);
+    }
+    bindQrButton();
+  } else if (qrButton) {
+    qrButton.remove();
+  }
+
+  const hasBottomActions = Boolean(document.getElementById('feedback-link') || document.getElementById('qr-button'));
+  let separator = menuActions.querySelector('.menu-separator');
+
+  if (hasBottomActions && !separator) {
+    separator = document.createElement('div');
+    separator.className = 'menu-separator';
+    menuActions.insertBefore(separator, menuActions.firstChild);
+  } else if (!hasBottomActions && separator) {
+    separator.remove();
   }
 }
 
 function renderLinks() {
   ensureActionControls();
 
-  const showFeedbackForm = feedbackFormVisible();
-  const feedbackHeaderLink = document.getElementById('header-feedback-link');
-  const feedbackMenuLink = document.getElementById('feedback-link');
-
-  setElementVisible(feedbackHeaderLink, showFeedbackForm);
-  setElementVisible(feedbackMenuLink, showFeedbackForm);
-
-  if (showFeedbackForm) {
+  if (feedbackFormVisible()) {
     setLink('feedback-link', app.links.feedback, 'Form de feedback');
     setLink('header-feedback-link', app.links.feedback, 'Form de feedback');
   }
 
-  const showCuestionario = cuestionarioFormVisible();
-  const qrButton = document.getElementById('qr-button');
-  setElementVisible(qrButton, showCuestionario);
-
-  const aclaracionesLink = document.getElementById('menu-aclaraciones-link') || document.querySelector('a[href="#aclaraciones"]');
-  setElementVisible(aclaracionesLink, aclaracionesVisible());
-
-  updateQrData();
+  if (cuestionarioFormVisible()) {
+    updateQrData();
+    bindQrButton();
+  }
 
   const shareButton = document.getElementById('share-button');
   if (!shareButton) return;
@@ -2008,21 +2082,29 @@ function closeHeaderMenu() {
   if (backdrop) backdrop.hidden = true;
 }
 
-function setupQrLightbox() {
+function bindQrButton() {
   const button = document.getElementById('qr-button');
   const lightbox = document.getElementById('qr-lightbox');
   const image = document.getElementById('qr-image');
 
   if (!button || !lightbox || !image) return;
 
-  updateQrData();
-
-  button.addEventListener('click', () => {
+  button.onclick = () => {
     if (!cuestionarioFormVisible()) return;
     closeHeaderMenu();
     updateQrData();
     lightbox.hidden = false;
-  });
+  };
+}
+
+function setupQrLightbox() {
+  const lightbox = document.getElementById('qr-lightbox');
+  const image = document.getElementById('qr-image');
+
+  if (!lightbox || !image) return;
+
+  updateQrData();
+  bindQrButton();
 
   lightbox.querySelectorAll('[data-close-qr]').forEach(el => {
     el.addEventListener('click', closeQrLightbox);
