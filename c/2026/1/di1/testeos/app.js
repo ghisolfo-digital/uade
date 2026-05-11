@@ -674,6 +674,23 @@ function isInsideGlobalTestWindow() {
   return now >= firstBlockDateTime && now < lastBlockDateTime;
 }
 
+function isInsideTestWindowForDate(fechaKey = currentDateKey()) {
+  const firstBlockDateTime = getFirstBlockDateTime(fechaKey);
+  const lastBlockDateTime = getLastBlockDateTime(fechaKey);
+
+  if (!firstBlockDateTime || !lastBlockDateTime) return false;
+
+  const now = currentDateTime();
+  return now >= firstBlockDateTime && now < lastBlockDateTime;
+}
+
+function isBeforeFirstBlockForDate(fechaKey = currentDateKey()) {
+  const firstBlockDateTime = getFirstBlockDateTime(fechaKey);
+  if (!firstBlockDateTime) return false;
+
+  return currentDateTime() < firstBlockDateTime;
+}
+
 function isTestDateToday() {
   return isAnyAgendaDateToday();
 }
@@ -1240,11 +1257,13 @@ function renderMyNow(nowAction, nextAction, actions = []) {
       const isUndefined = nextAction.rol === 'Actividad a definir';
       const rolTexto = isFeedback ? (nextAction.detalle ? 'Das feedback a' : 'Das feedback') : nextAction.rol;
       const nextPlace = nextAction.aula ? ` · ${escapeHTML(aulaLabel(nextAction.aula))}` : '';
-      const isBeforeGlobalStart = testDateStatus() === 'future';
-      const eyebrowText = isInsideGlobalTestWindow()
+      const currentKey = currentDateKey();
+      const isBeforeDateStart = isBeforeFirstBlockForDate(currentKey);
+      const isInsideDateWindow = isInsideTestWindowForDate(currentKey);
+      const eyebrowText = isInsideDateWindow
         ? `Ahora tenés break ☕ · ${myTeam}`
         : myTeam;
-      const beforeStartSub = isBeforeGlobalStart ? `<div class="sub">Todavía no empezó el primer bloque.</div>` : '';
+      const beforeStartSub = isBeforeDateStart ? `<div class="sub">Todavía no empezó el primer bloque.</div>` : '';
 
       return `
         <div class="eyebrow">${eyebrowText}</div>
