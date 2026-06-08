@@ -20,7 +20,7 @@ function getCsvUrl() {
 }
 
 /* =========================
-   FETCH + PARSEO
+   FETCH + PARSEO CSV
    ========================= */
 
 async function fetchCSV() {
@@ -133,12 +133,20 @@ function formatDateShort(value) {
 }
 
 function formatClassNumber(value) {
-  const n = Number(clean(value));
-  return Number.isFinite(n) ? String(n).padStart(2, "0") : clean(value);
+  const raw = clean(value);
+  const n = Number(raw);
+  return Number.isFinite(n) && raw !== "" ? String(n).padStart(2, "0") : raw;
 }
 
 function todayLocal() {
   const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
   d.setHours(0, 0, 0, 0);
   return d;
 }
@@ -176,79 +184,193 @@ function isDevolucion(value) {
   return /devoluc|devolución/i.test(clean(value));
 }
 
+function sortValue(value, fallback) {
+  const raw = clean(value).replace(",", ".");
+  if (raw !== "" && !Number.isNaN(Number(raw))) return Number(raw);
+  return fallback;
+}
+
+function rowToObject(header, row) {
+  const obj = {};
+  header.forEach((key, index) => {
+    const k = clean(key).toLowerCase();
+    if (!k) return;
+    obj[k] = row[index] ?? "";
+  });
+  return obj;
+}
+
 /* =========================
    DATA
    ========================= */
 
 function readData(rows) {
-  const pageHeader = rows[0] || [];
-  const firstField = clean(pageHeader[0]);
-  const headerTitle = clean(pageHeader[1]) || "Cronograma";
-  const headerMeta = clean(pageHeader[2]);
-  const headerBrand = clean(pageHeader[3]);
-  const timeStart = clean(pageHeader[4]);
-  const timeEnd = clean(pageHeader[5]);
+  rows = rows.filter(r => r.some(cell => clean(cell) !== ""));
+
+  const firstRealRow = rows[0] || [];
+  const isNewConfig = clean(firstRealRow[0]).toLowerCase() === "config";
+  const configRow = isNewConfig ? firstRealRow.slice(1) : firstRealRow;
+
+  const firstField = clean(configRow[0]);
+  const headerTitle = clean(configRow[1]) || "Cronograma";
+  const headerMeta = clean(configRow[2]);
+  const headerBrand = clean(configRow[3]);
+  const timeStart = clean(configRow[4]);
+  const timeEnd = clean(configRow[5]);
 
   const blockDefs = new Map();
-  rows.slice(1).forEach(r => {
+  const classRecords = [];
+  const activityRecords = [];
+  const noteRecords = [];
+  let currentHeader = null;
+  let rowCounter = 0;
+
+  rows.forEach((r, index) => {
     const kind = clean(r[0]).toLowerCase();
-    if (kind !== "bloque") return;
-    const label = clean(r[1]);
-    if (!label) return;
-    const slug = slugify(label);
-    const strong = normalizeColor(r[2]);
-    const soft = normalizeColor(r[3]) || (strong ? mixWithWhite(strong) : "");
-    blockDefs.set(slug, { label, slug, strong, soft });
-  });
+    if (!kind) return;
 
-  const classRows = rows
-    .slice(1)
-    .filter(r => clean(r[0]).toLowerCase() === "clase")
-    .map(r => ({
-      clase: clean(r[1]),
-      fecha: clean(r[2]),
-      aula: clean(r[3]),
-      tipoClase: clean(r[4]).toLowerCase() || "presencial",
-      bloque: clean(r[5]),
-      actividad: clean(r[6]),
-      link: clean(r[7]),
-      destacado: isTrue(r[8]),
-      asistenciaObligatoria: isTrue(r[9]),
-      comentario: clean(r[10]),
-      tarea: clean(r[11])
-    }));
+    if (kind === "config") return;
 
-  const groups = [];
-  const byKey = new Map();
-
-  classRows.forEach(item => {
-    const key = `${item.clase}__${item.fecha}`;
-    if (!byKey.has(key)) {
-      const group = {
-        clase: item.clase,
-        fecha: item.fecha,
-        date: parseDateRelaxed(item.fecha),
-        aula: item.aula,
-        tipoClase: item.tipoClase,
-        comentario: item.comentario,
-        rows: []
-      };
-      byKey.set(key, group);
-      groups.push(group);
+    if (kind === "bloque") {
+      const label = clean(r[1]);
+      if (!label) return;
+      const slug = slugify(label);
+      const strong = normalizeColor(r[2]);
+      const soft = normalizeColor(r[3]) || (strong ? mixWithWhite(strong) : "");
+      blockDefs.set(slug, { label, slug, strong, soft });
+      return;
     }
 
-    const group = byKey.get(key);
-    if (!group.aula && item.aula) group.aula = item.aula;
-    if ((!group.comentario || ["feriado", "suspendida"].includes(item.tipoClase)) && item.comentario) group.comentario = item.comentario;
-    if (["feriado", "suspendida"].includes(item.tipoClase)) group.tipoClase = item.tipoClase;
-    group.rows.push(item);
+    if (kind === "tipo") {
+      currentHeader = r.map(cell => clean(cell).toLowerCase());
+      return;
+    }
+
+    if (!["clase", "actividad", "nota"].includes(kind)) return;
+    rowCounter++;
+
+    const item = currentHeader ? rowToObject(currentHeader, r) : {};
+    item.tipo = kind;
+    item.__row = index;
+    item.__orderFallback = rowCounter;
+
+    if (kind === "clase") {
+      classRecords.push(item);
+
+      // Compatibilidad con la estructura vieja: una fila clase también podía traer una actividad.
+      if (clean(item.bloque) || clean(item.actividad) || clean(item.link) || clean(item.tarea)) {
+        activityRecords.push({ ...item, tipo: "actividad", __fromOldClassRow: true });
+      }
+    } else if (kind === "actividad") {
+      activityRecords.push(item);
+    } else if (kind === "nota") {
+      noteRecords.push(item);
+    }
+  });
+
+  const classes = new Map();
+  let classFallbackOrder = 0;
+
+  classRecords.forEach(item => {
+    const clase = clean(item.clase);
+    if (!clase) return;
+    classFallbackOrder++;
+
+    if (!classes.has(clase)) {
+      classes.set(clase, {
+        type: "class",
+        clase,
+        ordenRaw: clean(item.orden),
+        orden: sortValue(item.orden, classFallbackOrder),
+        fecha: clean(item.fecha),
+        date: parseDateRelaxed(item.fecha),
+        aula: clean(item.aula),
+        tipoClase: clean(item.tipo_clase).toLowerCase() || "presencial",
+        asistenciaObligatoria: isTrue(item.asistencia_obligatoria),
+        comentario: clean(item.comentario),
+        rows: []
+      });
+    } else {
+      const group = classes.get(clase);
+      if (!group.ordenRaw && clean(item.orden)) {
+        group.ordenRaw = clean(item.orden);
+        group.orden = sortValue(item.orden, group.orden);
+      }
+      if (!group.fecha && clean(item.fecha)) {
+        group.fecha = clean(item.fecha);
+        group.date = parseDateRelaxed(item.fecha);
+      }
+      if (!group.aula && clean(item.aula)) group.aula = clean(item.aula);
+      if (clean(item.tipo_clase) && group.tipoClase === "presencial") group.tipoClase = clean(item.tipo_clase).toLowerCase();
+      if (isTrue(item.asistencia_obligatoria)) group.asistenciaObligatoria = true;
+      if (!group.comentario && clean(item.comentario)) group.comentario = clean(item.comentario);
+      if (["feriado", "suspendida"].includes(clean(item.tipo_clase).toLowerCase())) {
+        group.tipoClase = clean(item.tipo_clase).toLowerCase();
+        if (clean(item.comentario)) group.comentario = clean(item.comentario);
+      }
+    }
+  });
+
+  activityRecords.forEach(item => {
+    const clase = clean(item.clase);
+    if (!clase) return;
+    if (!classes.has(clase)) {
+      classFallbackOrder++;
+      classes.set(clase, {
+        type: "class",
+        clase,
+        ordenRaw: "",
+        orden: classFallbackOrder,
+        fecha: "",
+        date: null,
+        aula: "",
+        tipoClase: "presencial",
+        asistenciaObligatoria: false,
+        comentario: "",
+        rows: []
+      });
+    }
+
+    if (!clean(item.bloque) && !clean(item.actividad) && !clean(item.link) && !clean(item.tarea) && !clean(item.comentario)) return;
+
+    classes.get(clase).rows.push({
+      clase,
+      bloque: clean(item.bloque),
+      actividad: clean(item.actividad),
+      link: clean(item.link),
+      destacado: isTrue(item.destacado),
+      asistenciaObligatoria: isTrue(item.asistencia_obligatoria),
+      comentario: clean(item.comentario),
+      tarea: clean(item.tarea),
+      __row: item.__row
+    });
+  });
+
+  const notes = noteRecords.map((item, index) => {
+    const hasTitleColumn = Object.prototype.hasOwnProperty.call(item, "titulo");
+    const titulo = hasTitleColumn ? clean(item.titulo) : "";
+    const comentario = clean(item.comentario || item.texto || "");
+    return {
+      type: "note",
+      orden: sortValue(item.orden, 10000 + index),
+      titulo,
+      comentario,
+      __row: item.__row
+    };
+  }).filter(note => note.titulo || note.comentario);
+
+  const classList = Array.from(classes.values());
+  classList.forEach(group => {
+    group.rows.sort((a, b) => a.__row - b.__row);
   });
 
   const usedBlocks = new Set();
-  classRows.forEach(item => {
-    if (!item.bloque) return;
-    if (!item.actividad && !item.comentario && !item.link) return;
-    usedBlocks.add(slugify(item.bloque));
+  classList.forEach(group => {
+    group.rows.forEach(item => {
+      if (!item.bloque) return;
+      if (!item.actividad && !item.comentario && !item.link && !item.tarea) return;
+      usedBlocks.add(slugify(item.bloque));
+    });
   });
 
   const blocks = [];
@@ -260,22 +382,43 @@ function readData(rows) {
     blocks.push(def);
   });
 
-  classRows.forEach(item => {
-    if (!item.bloque) return;
-    if (!item.actividad && !item.comentario && !item.link) return;
-    const slug = slugify(item.bloque);
-    if (!seen.has(slug)) {
-      seen.add(slug);
-      blocks.push({ label: item.bloque, slug, strong: "", soft: "" });
-    }
+  classList.forEach(group => {
+    group.rows.forEach(item => {
+      if (!item.bloque) return;
+      if (!item.actividad && !item.comentario && !item.link && !item.tarea) return;
+      const slug = slugify(item.bloque);
+      if (!seen.has(slug)) {
+        seen.add(slug);
+        blocks.push({ label: item.bloque, slug, strong: "", soft: "" });
+      }
+    });
   });
 
-  return { firstField, headerTitle, headerMeta, headerBrand, timeStart, timeEnd, groups, blocks };
+  const items = [
+    ...classList,
+    ...notes
+  ].sort((a, b) => {
+    const diff = a.orden - b.orden;
+    if (diff !== 0) return diff;
+    return (a.__row || 0) - (b.__row || 0);
+  });
+
+  const datedClasses = classList.filter(g => g.date).sort((a, b) => a.date - b.date);
+  const lastDate = datedClasses.length ? datedClasses[datedClasses.length - 1].date : null;
+  const finished = lastDate ? todayLocal() >= addDays(lastDate, 1) : false;
+
+  return { firstField, headerTitle, headerMeta, headerBrand, timeStart, timeEnd, items, groups: classList, blocks, finished };
 }
 
-function getNextClassIndex(groups) {
+function getNextClassItemIndex(items, finished) {
+  if (finished) return -1;
   const today = todayLocal();
-  return groups.findIndex(g => g.date && g.date >= today && !["feriado", "suspendida"].includes(g.tipoClase));
+  return items.findIndex(item => (
+    item.type === "class" &&
+    item.date &&
+    item.date >= today &&
+    !["feriado", "suspendida"].includes(item.tipoClase)
+  ));
 }
 
 /* =========================
@@ -294,12 +437,12 @@ function render(data) {
   if (subline) subline.textContent = "";
   document.title = `Cronograma - ${data.firstField || data.headerTitle} - @ghisolfo.digital`;
 
-  if (data.groups.length === 0) {
+  if (data.items.length === 0) {
     schedule.innerHTML = `<div class="status-card">No hay clases para mostrar.</div>`;
     return;
   }
 
-  const nextIdx = getNextClassIndex(data.groups);
+  const nextIdx = getNextClassItemIndex(data.items, data.finished);
   schedule.style.setProperty("--block-count", Math.max(data.blocks.length, 1));
 
   schedule.innerHTML = `
@@ -316,7 +459,7 @@ function render(data) {
         <div class="head-comment">Comentarios</div>
       </div>
       <div class="schedule-body">
-        ${data.groups.map((group, index) => renderGroup(group, index, nextIdx, data.blocks)).join("")}
+        ${data.items.map((item, index) => item.type === "note" ? renderNote(item, data.blocks) : renderGroup(item, index, nextIdx, data.blocks, data.finished)).join("")}
       </div>
     </div>
   `;
@@ -335,8 +478,14 @@ function renderBaseCells(group, isNext) {
   `;
 }
 
-function renderGroup(group, index, nextIdx, blocks) {
-  const isPast = group.date && group.date < todayLocal();
+function renderComment(group) {
+  const comment = escapeHTML(group.comentario || "");
+  const chip = group.asistenciaObligatoria ? `<span class="required-chip">Asistencia obligatoria</span>` : "";
+  return `${chip}${comment}`;
+}
+
+function renderGroup(group, index, nextIdx, blocks, finished) {
+  const isPast = !finished && group.date && group.date < todayLocal();
   const isNext = index === nextIdx;
   const isSpecial = ["feriado", "suspendida"].includes(group.tipoClase);
   const typeLabel = group.tipoClase ? group.tipoClase.charAt(0).toUpperCase() + group.tipoClase.slice(1) : "Clase";
@@ -363,7 +512,20 @@ function renderGroup(group, index, nextIdx, blocks) {
     <div class="${rowClasses}">
       ${renderBaseCells(group, isNext)}
       ${blocks.map((block, i) => renderBlockCell(group, block, i)).join("")}
-      <div class="comment-cell">${escapeHTML(group.comentario || "")}</div>
+      <div class="comment-cell">${renderComment(group)}</div>
+    </div>
+  `;
+}
+
+function renderNote(note, blocks) {
+  const title = note.titulo ? `<strong>${escapeHTML(note.titulo)}</strong>` : "";
+  const comment = note.comentario ? `<span>${escapeHTML(note.comentario)}</span>` : "";
+  return `
+    <div class="schedule-row note-row">
+      <div class="hand-gutter cell-sticky cell-sticky-hand"></div>
+      <div class="note-cell" style="grid-column: span ${Math.max(blocks.length + 5, 6)};">
+        ${title}${comment}
+      </div>
     </div>
   `;
 }
@@ -390,13 +552,15 @@ function renderActivity(item) {
     devolucion ? "is-devolucion" : ""
   ].filter(Boolean).join(" ");
 
-  const label = escapeHTML(item.actividad || item.comentario || "-");
+  const label = escapeHTML(item.actividad || item.comentario || item.tarea || "-");
+  const task = item.tarea ? `<span class="activity-task">${escapeHTML(item.tarea)}</span>` : "";
+  const content = `<span class="activity-label">${label}</span>${task}`;
 
   if (item.link) {
-    return `<a class="${classes}" href="${escapeHTML(item.link)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+    return `<a class="${classes}" href="${escapeHTML(item.link)}" target="_blank" rel="noopener noreferrer">${content}</a>`;
   }
 
-  return `<span class="${classes}">${label}</span>`;
+  return `<span class="${classes}">${content}</span>`;
 }
 
 function showError(error) {

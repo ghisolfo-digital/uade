@@ -251,7 +251,7 @@ body{
   background:#fff;
   align-items:stretch!important;
   flex-direction:column;
-  justify-content:center!important;
+  justify-content:stretch!important;
   gap:0;
 }
 .empty-cell{background:#fff}
@@ -260,7 +260,11 @@ body{
   display:flex;
   align-items:center!important;
   justify-content:center!important;
+  flex:1 1 auto;
+  flex-direction:column;
+  gap:2px;
   width:100%;
+  height:100%;
   min-height:25px;
   padding:4px 6px;
   color:#000;
@@ -268,17 +272,60 @@ body{
   text-decoration:none;
   border:0;
   border-radius:0;
-  white-space:nowrap;
+  white-space:normal;
   overflow:hidden;
   text-overflow:ellipsis;
   font-weight:400!important;
 }
+.activity-label{display:block}
+.activity-task{display:block; font-size:11px; line-height:1.15; opacity:.72; font-weight:400}
 .activity-cell.is-soft{background:var(--soft)}
 .activity-cell.is-strong{background:var(--strong); color:#000; font-weight:400!important}
 a.activity-cell{text-decoration:underline; text-underline-offset:2px}
 a.activity-cell:hover{filter:brightness(.94)}
 .activity-cell.is-required::after{content:none!important}
 .activity-cell.is-devolucion{background:transparent!important; color:color-mix(in srgb, var(--strong) 72%, #000 28%)!important; font-weight:400!important}
+
+.required-chip{
+  display:inline-flex;
+  align-items:center;
+  padding:2px 6px;
+  border-radius:999px;
+  background:#111;
+  color:#fff;
+  font-size:11px;
+  line-height:1.1;
+  white-space:nowrap;
+}
+.comment-cell .required-chip{
+  margin-right:8px;
+  flex:0 0 auto;
+}
+.schedule-row.is-past .required-chip{
+  background:#dcdcdc!important;
+  color:#b8b8b8!important;
+  border-color:#dcdcdc!important;
+}
+
+.note-row{
+  background:#fafafa;
+}
+.note-cell{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  background:#fafafa;
+  color:#555;
+  border-right:0!important;
+}
+.note-cell strong{
+  color:#222;
+  font-weight:700;
+}
+.note-cell span{
+  display:inline-block;
+}
 
 .block-1{--soft:var(--b1-soft); --strong:var(--b1-strong)}
 .block-2{--soft:var(--b2-soft); --strong:var(--b2-strong)}
